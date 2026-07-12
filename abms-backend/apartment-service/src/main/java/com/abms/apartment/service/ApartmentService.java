@@ -1,0 +1,24 @@
+package com.abms.apartment.service;
+
+import com.abms.apartment.dto.ApartmentResidentResponse;
+import com.abms.apartment.dto.ApartmentResponse;
+import com.abms.apartment.dto.ResidentRegistrationRequest;
+import java.util.List;
+import java.util.UUID;
+
+public interface ApartmentService {
+
+    ApartmentResponse getApartmentById(UUID apartmentId);
+
+    List<ApartmentResponse> getAllApartments();
+
+    ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request);
+
+    List<ApartmentResidentResponse> getPendingResidentRegistrations();
+
+    ApartmentResidentResponse approveResidentRegistration(UUID userId);
+
+    ApartmentResidentResponse rejectResidentRegistration(UUID userId);
+
+    ApartmentResidentResponse getActiveResidenceByUserId(UUID userId);
+}

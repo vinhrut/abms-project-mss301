@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: vehicle-service
+  datasource:
+    url: jdbc:postgresql://localhost:5433/abms_db
+    username: admin
+    password: password123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+services:
+  apartment-service:
+    url: http://localhost:8082

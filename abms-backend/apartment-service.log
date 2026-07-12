@@ -1,0 +1,44 @@
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/C:/Users/laptop368/Downloads/apache-maven-3.9.16/lib/maven-slf4j-provider-3.9.16(1).jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/C:/Users/laptop368/Downloads/apache-maven-3.9.16/lib/maven-slf4j-provider-3.9.16.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.slf4j.impl.MavenSimpleLoggerFactory]
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/C:/Users/laptop368/Downloads/apache-maven-3.9.16/lib/maven-slf4j-provider-3.9.16(1).jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/C:/Users/laptop368/Downloads/apache-maven-3.9.16/lib/maven-slf4j-provider-3.9.16.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.slf4j.impl.MavenSimpleLoggerFactory]
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.6)
+
+2026-07-09T22:37:09.836+07:00  INFO 16456 --- [apartment-service] [           main] c.abms.apartment.ApartmentApplication    : Starting ApartmentApplication using Java 21.0.10 with PID 16456 (D:\abms-backend\apartment-service\target\classes started by laptop368 in D:\abms-backend\apartment-service)
+2026-07-09T22:37:09.838+07:00  INFO 16456 --- [apartment-service] [           main] c.abms.apartment.ApartmentApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-07-09T22:37:10.290+07:00  INFO 16456 --- [apartment-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-09T22:37:10.335+07:00  INFO 16456 --- [apartment-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 40 ms. Found 2 JPA repository interfaces.
+2026-07-09T22:37:10.708+07:00  INFO 16456 --- [apartment-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
+2026-07-09T22:37:10.718+07:00  INFO 16456 --- [apartment-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-07-09T22:37:10.718+07:00  INFO 16456 --- [apartment-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-07-09T22:37:10.760+07:00  INFO 16456 --- [apartment-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-07-09T22:37:10.760+07:00  INFO 16456 --- [apartment-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 891 ms
+2026-07-09T22:37:10.864+07:00  INFO 16456 --- [apartment-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-07-09T22:37:10.903+07:00  INFO 16456 --- [apartment-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.8.Final
+2026-07-09T22:37:10.926+07:00  INFO 16456 --- [apartment-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-07-09T22:37:11.082+07:00  INFO 16456 --- [apartment-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-09T22:37:11.101+07:00  INFO 16456 --- [apartment-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-07-09T22:37:11.228+07:00  INFO 16456 --- [apartment-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@da09250
+2026-07-09T22:37:11.229+07:00  INFO 16456 --- [apartment-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-07-09T22:37:11.917+07:00  INFO 16456 --- [apartment-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-09T22:37:11.956+07:00  INFO 16456 --- [apartment-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-09T22:37:12.231+07:00  WARN 16456 --- [apartment-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-07-09T22:37:12.466+07:00  INFO 16456 --- [apartment-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path ''
+2026-07-09T22:37:12.473+07:00  INFO 16456 --- [apartment-service] [           main] c.abms.apartment.ApartmentApplication    : Started ApartmentApplication in 2.928 seconds (process running for 3.184)
+2026-07-09T22:37:40.418+07:00  INFO 16456 --- [apartment-service] [nio-8082-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-07-09T22:37:40.418+07:00  INFO 16456 --- [apartment-service] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-07-09T22:37:40.419+07:00  INFO 16456 --- [apartment-service] [nio-8082-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+^C
