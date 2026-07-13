@@ -14,12 +14,12 @@ export function AuthLayout() {
 
           <div className="feature-points">
             <div>
-              <strong>Authentication</strong>
-              <span>Đăng nhập, đăng ký, lưu phiên và phân quyền giao diện.</span>
+              <strong>Role-based workspace</strong>
+              <span>Điều hướng khác nhau cho admin, manager, staff, technician và resident.</span>
             </div>
             <div>
-              <strong>Vehicle workflow</strong>
-              <span>Đăng ký xe, duyệt yêu cầu, theo dõi trạng thái PENDING.</span>
+              <strong>Operations-ready base UI</strong>
+              <span>Khung sẵn cho building, apartment, billing, maintenance, notification và reports.</span>
             </div>
             <div>
               <strong>Maintainable UI</strong>

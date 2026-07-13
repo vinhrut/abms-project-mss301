@@ -1,0 +1,16 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5433,
+            "driver": "PostgreSQL",
+            "name": "abms-db-local",
+            "database": "abms_db",
+            "username": "admin",
+            "password": "password123"
+        }
+    ],
+    "java.debug.settings.onBuildFailureProceed": true
+}

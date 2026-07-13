@@ -6,6 +6,11 @@ export const authService = {
     return data
   },
 
+  async changePassword(payload) {
+    const { data } = await apiClient.post('/api/v1/auth/change-password', payload)
+    return data
+  },
+
   async register(payload) {
     const { data } = await apiClient.post('/api/v1/auth/register', payload)
     return data

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ApartmentRepository extends JpaRepository<Apartment, UUID> {
 
     java.util.List<Apartment> findAllByOrderByRoomNumberAsc();
+
+    java.util.List<Apartment> findByBuildingIdOrderByRoomNumberAsc(UUID buildingId);
 }

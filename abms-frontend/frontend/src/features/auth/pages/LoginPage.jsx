@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useAuth } from '../context/useAuth.js'
 import { validateLoginForm } from '../utils/authValidation.js'
@@ -56,7 +56,7 @@ export function LoginPage() {
       <div className="auth-card__header">
         <span className="eyebrow">Authentication</span>
         <h2>Đăng nhập hệ thống</h2>
-        <p>Đăng nhập để truy cập đúng màn hình theo vai trò: cư dân, staff hoặc manager.</p>
+        <p>Đăng nhập để truy cập đúng workspace theo vai trò. Tài khoản được cấp bởi Admin hoặc Manager, không đăng ký công khai.</p>
       </div>
 
       <form className="form-grid" onSubmit={handleSubmit}>
@@ -91,14 +91,11 @@ export function LoginPage() {
         </button>
 
         <div className="auth-inline-note">
-          <strong>Gợi ý theo SRS:</strong> sau khi đăng nhập, cư dân sẽ đi vào luồng đăng ký/xem xe, còn staff/manager sẽ vào luồng duyệt xe.
+          <strong>Ghi chú nghiệp vụ:</strong> nếu bạn chưa có tài khoản, vui lòng liên hệ Admin hoặc Ban quản lý tòa nhà để được cấp quyền truy cập.
         </div>
       </form>
 
       <div className="auth-card__footer">
-        <p>
-          Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
-        </p>
         <small>Trang được bảo vệ. Sau khi đăng nhập, bạn sẽ được chuyển đến {redirectHint}.</small>
       </div>
     </div>

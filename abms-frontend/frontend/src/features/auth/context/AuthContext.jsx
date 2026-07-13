@@ -4,16 +4,8 @@ import { clearStoredAuth, getStoredAuth, setStoredAuth } from '../../../utils/st
 import { authService } from '../../../services/authService.js'
 import { setAuthToken } from '../../../services/apiClient.js'
 import { AuthContext } from './authContextInstance.js'
-
-const elevatedRoles = ['STAFF', 'MANAGER']
-
-function getDefaultRoute(roleName) {
-  if (elevatedRoles.includes(roleName)) {
-    return '/vehicles'
-  }
-
-  return '/vehicles/register'
-}
+import { getDefaultPrivateRoute } from '../../../config/navigation.js'
+import { getRoleLabel, isElevatedRole, normalizeRole } from '../../../config/roles.js'
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(() => getStoredAuth())
@@ -29,20 +21,20 @@ export function AuthProvider({ children }) {
   }, [auth])
 
   const handleAuthSuccess = (payload) => {
-    setAuth(payload)
-    setStoredAuth(payload)
-    setAuthToken(payload.token)
-    navigate(getDefaultRoute(payload.roleName), { replace: true })
+    const normalizedPayload = {
+      ...payload,
+      roleName: normalizeRole(payload.roleName),
+    }
+
+    setAuth(normalizedPayload)
+    setStoredAuth(normalizedPayload)
+    setAuthToken(normalizedPayload.token)
+    navigate(getDefaultPrivateRoute(normalizedPayload.roleName), { replace: true })
   }
 
   const login = useCallback(async (formData) => {
     const response = await authService.login(formData)
     handleAuthSuccess(response)
-    return response
-  }, [])
-
-  const register = useCallback(async (formData) => {
-    const response = await authService.register(formData)
     return response
   }, [])
 
@@ -53,21 +45,23 @@ export function AuthProvider({ children }) {
     navigate('/login', { replace: true })
   }, [navigate])
 
-  const isElevatedRole = elevatedRoles.includes(auth?.roleName)
-  const defaultPrivateRoute = getDefaultRoute(auth?.roleName)
+  const elevated = isElevatedRole(auth?.roleName)
+  const defaultPrivateRoute = getDefaultPrivateRoute(auth?.roleName)
+  const roleLabel = getRoleLabel(auth?.roleName)
 
   const value = useMemo(
     () => ({
       auth,
       isHydrated,
       isAuthenticated: Boolean(auth?.token),
-      isElevatedRole,
+      isElevatedRole: elevated,
+      normalizedRole: normalizeRole(auth?.roleName),
+      roleLabel,
       defaultPrivateRoute,
       login,
-      register,
       logout,
     }),
-    [auth, defaultPrivateRoute, isElevatedRole, isHydrated, login, logout, register],
+    [auth, defaultPrivateRoute, elevated, isHydrated, login, logout, roleLabel],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,4 +53,16 @@ public class User {
 
     @Column(name = "status", nullable = false, length = 50)
     private String status;
+
+    @Column(name = "building_id")
+    private UUID buildingId;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "locked_by")
+    private UUID lockedBy;
+
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
 }

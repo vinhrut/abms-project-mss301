@@ -2,26 +2,26 @@ import { Link } from 'react-router-dom'
 
 const highlights = [
   {
-    title: 'Trang giao diện rõ ràng',
+    title: 'Unified building operations UI',
     description:
-      'Người dùng vào localhost sẽ thấy ngay landing page giới thiệu hệ thống thay vì bị chuyển sang màn hình trống.',
+      'Trang đầu vào giới thiệu rõ hệ thống và dẫn người dùng tới workspace phù hợp theo vai trò.',
   },
   {
-    title: 'Luồng xác thực đầy đủ',
+    title: 'Role-based navigation',
     description:
-      'Hỗ trợ điều hướng mượt mà giữa Home, Login và Sign up để bắt đầu sử dụng hệ thống nhanh hơn.',
+      'Sidebar, header và dashboard thay đổi theo role để phù hợp vận hành thực tế của tòa nhà.',
   },
   {
-    title: 'Quản lý phương tiện',
+    title: 'API-friendly module shells',
     description:
-      'Cư dân có thể đăng ký xe và bộ phận quản lý có thể theo dõi, duyệt hoặc từ chối yêu cầu.',
+      'Các module billing, maintenance, reports và notifications đã có khung giao diện để nối backend sau.',
   },
 ]
 
 const steps = [
   'Khách truy cập vào trang chủ để xem tổng quan hệ thống',
   'Người dùng đăng ký hoặc đăng nhập tài khoản',
-  'Sau khi xác thực, hệ thống chuyển đến dashboard và các màn hình vehicle',
+  'Sau khi xác thực, hệ thống chuyển vào workspace và menu phù hợp theo role',
 ]
 
 export function HomePage() {
@@ -32,19 +32,16 @@ export function HomePage() {
           <span className="eyebrow">ABMS Frontend</span>
           <h1>Hệ thống giao diện quản lý căn hộ và phương tiện</h1>
           <p>
-            Giao diện đầu vào cho Apartment Building Management System, tối ưu cho luồng
-            từ trang chủ, đăng nhập, đăng ký đến quản lý vehicle trong một trải nghiệm
-            nhất quán.
+            Base frontend cho Apartment Building Management System với giao diện quản trị
+            đồng nhất, định hướng quản lý tòa nhà và sẵn sàng tích hợp thêm các service
+            backend trong các phase tiếp theo.
           </p>
 
           <div className="landing-actions">
             <Link to="/login" className="btn btn-primary">
               Đăng nhập ngay
             </Link>
-            <Link to="/register" className="btn btn-secondary">
-              Tạo tài khoản
-            </Link>
-            <Link to="/dashboard" className="btn btn-ghost">
+            <Link to="/app/dashboard" className="btn btn-ghost">
               Đi đến dashboard
             </Link>
           </div>

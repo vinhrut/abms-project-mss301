@@ -2,10 +2,15 @@
 
 import com.abms.apartment.entity.Apartment;
 import com.abms.apartment.entity.ApartmentResident;
+import com.abms.apartment.entity.Building;
 import com.abms.apartment.repository.ApartmentRepository;
 import com.abms.apartment.repository.ApartmentResidentRepository;
+import com.abms.apartment.repository.BuildingRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -15,55 +20,101 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    private static final UUID BUILDING_A = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static final UUID BUILDING_B = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    private static final UUID BUILDING_C = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
+
+    private final BuildingRepository buildingRepository;
     private final ApartmentRepository apartmentRepository;
     private final ApartmentResidentRepository apartmentResidentRepository;
 
     @Override
     public void run(String... args) {
-        if (apartmentRepository.count() == 0) {
-            apartmentRepository.save(Apartment.builder()
-                    .apartmentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-                    .buildingId(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-                    .roomNumber("A-101")
-                    .floor(1)
-                    .area(new BigDecimal("75.50"))
-                    .status("OCCUPIED")
-                    .build());
+        List<Building> buildings = List.of(
+                Building.builder().buildingId(BUILDING_A).name("Building A").code("A").address("123 Main Street").build(),
+                Building.builder().buildingId(BUILDING_B).name("Building B").code("B").address("456 Second Street").build(),
+                Building.builder().buildingId(BUILDING_C).name("Building C").code("C").address("789 Third Street").build());
 
-            apartmentRepository.save(Apartment.builder()
-                    .apartmentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab"))
-                    .buildingId(UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))
-                    .roomNumber("A-102")
-                    .floor(1)
-                    .area(new BigDecimal("68.00"))
-                    .status("OCCUPIED")
-                    .build());
-        }
+        cleanupBuildings(buildings);
+        buildings.forEach(buildingRepository::save);
 
-        if (apartmentResidentRepository.count() > 0) {
-            return;
-        }
+        List<Apartment> apartments = List.of(
+                apartment("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1", BUILDING_A, "A-101", 1, "72.50", "OCCUPIED"),
+                apartment("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2", BUILDING_A, "A-102", 1, "68.00", "OCCUPIED"),
+                apartment("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3", BUILDING_A, "A-201", 2, "80.00", "VACANT"),
+                apartment("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4", BUILDING_A, "A-202", 2, "77.00", "OCCUPIED"),
+                apartment("bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa1", BUILDING_B, "B-101", 1, "70.00", "OCCUPIED"),
+                apartment("bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa2", BUILDING_B, "B-102", 1, "69.50", "VACANT"),
+                apartment("bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa3", BUILDING_B, "B-201", 2, "82.00", "OCCUPIED"),
+                apartment("bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa4", BUILDING_B, "B-202", 2, "75.25", "VACANT"),
+                apartment("cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa1", BUILDING_C, "C-101", 1, "66.00", "VACANT"),
+                apartment("cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa2", BUILDING_C, "C-102", 1, "71.00", "OCCUPIED"),
+                apartment("cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa3", BUILDING_C, "C-201", 2, "84.00", "OCCUPIED"),
+                apartment("cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa4", BUILDING_C, "C-202", 2, "79.00", "VACANT"));
 
-        apartmentResidentRepository.save(ApartmentResident.builder()
-                .residentId(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1"))
-                .apartmentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
-                .userId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .relationship("OWNER")
-                .residenceType("PERMANENT")
+        cleanupApartments(apartments);
+        apartments.forEach(apartmentRepository::save);
+
+        List<ApartmentResident> residents = List.of(
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1", "11111111-1111-1111-1111-111111111111", "OWNER", "PERMANENT", 10),
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2", "bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa1", "22222222-2222-2222-2222-222222222222", "TENANT", "TEMPORARY", 8),
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3", "cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa3", "44444444-4444-4444-4444-444444444444", "OWNER", "PERMANENT", 6),
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee4", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4", "55555555-5555-5555-5555-555555555555", "TENANT", "TEMPORARY", 4));
+
+        cleanupResidents(residents);
+        residents.forEach(apartmentResidentRepository::save);
+    }
+
+    private void cleanupBuildings(List<Building> seedBuildings) {
+        Set<UUID> allowedBuildingIds = new HashSet<>();
+        seedBuildings.stream().map(Building::getBuildingId).forEach(allowedBuildingIds::add);
+
+        buildingRepository.findAll().stream()
+                .filter(existingBuilding -> !allowedBuildingIds.contains(existingBuilding.getBuildingId()))
+                .forEach(buildingRepository::delete);
+    }
+
+    private void cleanupApartments(List<Apartment> seedApartments) {
+        Set<UUID> allowedApartmentIds = new HashSet<>();
+        seedApartments.stream().map(Apartment::getApartmentId).forEach(allowedApartmentIds::add);
+
+        apartmentRepository.findAll().stream()
+                .filter(existingApartment -> !allowedApartmentIds.contains(existingApartment.getApartmentId()))
+                .forEach(apartmentRepository::delete);
+    }
+
+    private void cleanupResidents(List<ApartmentResident> seedResidents) {
+        Set<UUID> allowedResidentIds = new HashSet<>();
+        seedResidents.stream().map(ApartmentResident::getResidentId).forEach(allowedResidentIds::add);
+
+        apartmentResidentRepository.findAll().stream()
+                .filter(existingResident -> !allowedResidentIds.contains(existingResident.getResidentId()))
+                .forEach(apartmentResidentRepository::delete);
+    }
+
+    private Apartment apartment(String apartmentId, UUID buildingId, String roomNumber, int floor, String area, String status) {
+        return Apartment.builder()
+                .apartmentId(UUID.fromString(apartmentId))
+                .buildingId(buildingId)
+                .roomNumber(roomNumber)
+                .floor(floor)
+                .area(new BigDecimal(area))
+                .status(status)
+                .build();
+    }
+
+    private ApartmentResident resident(String residentId, String apartmentId, String userId, String relationship, String residenceType, int createdDaysAgo) {
+        LocalDateTime createdAt = LocalDateTime.now().minusDays(createdDaysAgo);
+        return ApartmentResident.builder()
+                .residentId(UUID.fromString(residentId))
+                .apartmentId(UUID.fromString(apartmentId))
+                .userId(UUID.fromString(userId))
+                .relationship(relationship)
+                .residenceType(residenceType)
                 .status("ACTIVE")
-                .createdAt(LocalDateTime.now().minusDays(10))
-                .approvedAt(LocalDateTime.now().minusDays(9))
-                .build());
-
-        apartmentResidentRepository.save(ApartmentResident.builder()
-                .residentId(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2"))
-                .apartmentId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab"))
-                .userId(UUID.fromString("44444444-4444-4444-4444-444444444444"))
-                .relationship("TENANT")
-                .residenceType("TEMPORARY")
-                .status("ACTIVE")
-                .createdAt(LocalDateTime.now().minusDays(8))
-                .approvedAt(LocalDateTime.now().minusDays(7))
-                .build());
+                .createdAt(createdAt)
+                .approvedAt(createdAt.plusHours(12))
+                .rejectedAt(null)
+                .build();
     }
 }

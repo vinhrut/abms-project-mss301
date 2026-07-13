@@ -1,5 +1,6 @@
 package com.abms.apartment.service;
 
+import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
@@ -8,9 +9,15 @@ import java.util.UUID;
 
 public interface ApartmentService {
 
+    List<BuildingResponse> getAllBuildings();
+
+    BuildingResponse getBuildingById(UUID buildingId);
+
     ApartmentResponse getApartmentById(UUID apartmentId);
 
     List<ApartmentResponse> getAllApartments();
+
+    List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId);
 
     ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request);
 

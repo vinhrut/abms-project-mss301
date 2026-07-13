@@ -1,7 +1,10 @@
 package com.abms.auth.service.impl;
 
 import com.abms.auth.client.ApartmentClient;
+import com.abms.auth.constant.RoleNames;
+import com.abms.auth.constant.UserStatus;
 import com.abms.auth.dto.AuthResponse;
+import com.abms.auth.dto.ChangePasswordRequest;
 import com.abms.auth.dto.LoginRequest;
 import com.abms.auth.dto.RegisterRequest;
 import com.abms.auth.dto.ResidentRegistrationRequest;
@@ -9,7 +12,9 @@ import com.abms.auth.entity.Role;
 import com.abms.auth.entity.User;
 import com.abms.auth.repository.RoleRepository;
 import com.abms.auth.repository.UserRepository;
+import com.abms.auth.security.CurrentUser;
 import com.abms.auth.security.JwtUtil;
+import com.abms.auth.security.SecurityUtils;
 import com.abms.auth.service.AuthService;
 import java.util.List;
 import java.util.UUID;
@@ -25,11 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthServiceImpl implements AuthService {
 
     private static final Integer DEFAULT_ROLE_ID = 1;
-    private static final String DEFAULT_ROLE_NAME = "RESIDENT";
+    private static final String DEFAULT_ROLE_NAME = RoleNames.RESIDENT;
     private static final String DEFAULT_STATUS = "PENDING_APPROVAL";
-    private static final String ACTIVE_STATUS = "ACTIVE";
-    private static final String LOCKED_STATUS = "LOCKED";
-    private static final String INACTIVE_STATUS = "INACTIVE";
+    private static final String ACTIVE_STATUS = UserStatus.ACTIVE;
+    private static final String LOCKED_STATUS = UserStatus.LOCKED;
+    private static final String INACTIVE_STATUS = UserStatus.INACTIVE;
     private static final String REJECTED_STATUS = "REJECTED";
 
     private final UserRepository userRepository;
@@ -37,46 +42,13 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final ApartmentClient apartmentClient;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already exists");
-        }
-
-        Role role = roleRepository.findByRoleName(DEFAULT_ROLE_NAME)
-                .orElseGet(() -> roleRepository.save(Role.builder()
-                        .roleId(DEFAULT_ROLE_ID)
-                        .roleName(DEFAULT_ROLE_NAME)
-                        .build()));
-
-        User user = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .phone(request.getPhone())
-                .idCard(request.getIdCard())
-                .status(DEFAULT_STATUS)
-                .role(role)
-                .build();
-
-        User savedUser = userRepository.save(user);
-
-        apartmentClient.createResidentRegistration(ResidentRegistrationRequest.builder()
-                .userId(savedUser.getUserId().toString())
-                .apartmentId(request.getApartmentId().toString())
-                .relationship(request.getRelationship())
-                .residenceType(request.getResidenceType())
-                .build());
-
-        return AuthResponse.builder()
-                .userId(savedUser.getUserId().toString())
-                .roleName(savedUser.getRole().getRoleName())
-                .email(savedUser.getEmail())
-                .status(savedUser.getStatus())
-                .message("Đăng ký thành công. Tài khoản đang chờ manager phê duyệt trước khi đăng nhập.")
-                .build();
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Self registration is disabled. Please contact your manager or administrator to receive an account.");
     }
 
     @Override
@@ -112,6 +84,29 @@ public class AuthServiceImpl implements AuthService {
                 .status(user.getStatus())
                 .message("Đăng nhập thành công")
                 .token(jwtUtil.generateToken(user))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse changePassword(String authorizationHeader, ChangePasswordRequest request) {
+        CurrentUser currentUser = securityUtils.parseCurrentUser(authorizationHeader);
+        User user = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + currentUser.getUserId()));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        User savedUser = userRepository.save(user);
+
+        return AuthResponse.builder()
+                .userId(savedUser.getUserId().toString())
+                .roleName(savedUser.getRole().getRoleName())
+                .email(savedUser.getEmail())
+                .status(savedUser.getStatus())
+                .message("Đổi mật khẩu thành công")
                 .build();
     }
 

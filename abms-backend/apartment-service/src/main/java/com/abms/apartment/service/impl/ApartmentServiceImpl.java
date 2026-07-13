@@ -2,12 +2,15 @@ package com.abms.apartment.service.impl;
 
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
+import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
 import com.abms.apartment.entity.Apartment;
 import com.abms.apartment.entity.ApartmentResident;
+import com.abms.apartment.entity.Building;
 import com.abms.apartment.exception.ResourceNotFoundException;
 import com.abms.apartment.repository.ApartmentRepository;
 import com.abms.apartment.repository.ApartmentResidentRepository;
+import com.abms.apartment.repository.BuildingRepository;
 import com.abms.apartment.service.ApartmentService;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,8 +27,23 @@ public class ApartmentServiceImpl implements ApartmentService {
     private static final String PENDING_APPROVAL = "PENDING_APPROVAL";
     private static final String REJECTED = "REJECTED";
 
+    private final BuildingRepository buildingRepository;
     private final ApartmentRepository apartmentRepository;
     private final ApartmentResidentRepository apartmentResidentRepository;
+
+    @Override
+    public List<BuildingResponse> getAllBuildings() {
+        return buildingRepository.findAllByOrderByNameAsc()
+                .stream()
+                .map(this::mapBuilding)
+                .toList();
+    }
+
+    @Override
+    public BuildingResponse getBuildingById(UUID buildingId) {
+        return mapBuilding(buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId)));
+    }
 
     @Override
     public ApartmentResponse getApartmentById(UUID apartmentId) {
@@ -36,6 +54,17 @@ public class ApartmentServiceImpl implements ApartmentService {
     @Override
     public List<ApartmentResponse> getAllApartments() {
         return apartmentRepository.findAllByOrderByRoomNumberAsc()
+                .stream()
+                .map(this::mapApartment)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId) {
+        buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        return apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
                 .stream()
                 .map(this::mapApartment)
                 .toList();
@@ -113,6 +142,15 @@ public class ApartmentServiceImpl implements ApartmentService {
                 .floor(apartment.getFloor())
                 .area(apartment.getArea())
                 .status(apartment.getStatus())
+                .build();
+    }
+
+    private BuildingResponse mapBuilding(Building building) {
+        return BuildingResponse.builder()
+                .buildingId(building.getBuildingId())
+                .name(building.getName())
+                .code(building.getCode())
+                .address(building.getAddress())
                 .build();
     }
 

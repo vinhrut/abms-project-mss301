@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1/apartments")
@@ -24,7 +25,10 @@ public class ApartmentController {
     private final ApartmentService apartmentService;
 
     @GetMapping
-    public ResponseEntity<List<ApartmentResponse>> getApartments() {
+    public ResponseEntity<List<ApartmentResponse>> getApartments(@RequestParam(value = "buildingId", required = false) UUID buildingId) {
+        if (buildingId != null) {
+            return ResponseEntity.ok(apartmentService.getApartmentsByBuildingId(buildingId));
+        }
         return ResponseEntity.ok(apartmentService.getAllApartments());
     }
 
