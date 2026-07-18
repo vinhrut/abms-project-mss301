@@ -1,3 +1,13 @@
+-- Deprecated: this script was created for the old single-database setup.
+-- The project now follows database-per-service with separate PostgreSQL
+-- containers. Initial data is seeded by each service DataInitializer:
+--   auth-service/config/DataInitializer.java
+--   apartment-service/config/DataInitializer.java
+--   vehicle-service/config/DataInitializer.java
+--
+-- Do not run this script against the new separated service databases because it
+-- creates tables from multiple bounded contexts in the same database.
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS roles (

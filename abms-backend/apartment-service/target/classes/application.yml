@@ -5,10 +5,12 @@ spring:
   application:
     name: apartment-service
   datasource:
-    url: jdbc:postgresql://localhost:5433/abms_db
+    url: jdbc:postgresql://localhost:5434/apartment_db
     username: admin
     password: password123
+    driver-class-name: org.postgresql.Driver
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     properties:

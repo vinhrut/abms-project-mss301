@@ -1,4 +1,4 @@
- package com.abms.apartment.config;
+package com.abms.apartment.config;
 
 import com.abms.apartment.entity.Apartment;
 import com.abms.apartment.entity.ApartmentResident;
@@ -23,6 +23,12 @@ public class DataInitializer implements CommandLineRunner {
     private static final UUID BUILDING_A = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static final UUID BUILDING_B = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
     private static final UUID BUILDING_C = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    private static final String APARTMENT_A101 = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1";
+    private static final String APARTMENT_A102 = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2";
+    private static final String APARTMENT_B101 = "bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa1";
+    private static final String RESIDENT_A101 = "00000000-0000-0000-0000-000000001101";
+    private static final String RESIDENT_A102 = "00000000-0000-0000-0000-000000001102";
+    private static final String RESIDENT_B101 = "00000000-0000-0000-0000-000000001201";
 
     private final BuildingRepository buildingRepository;
     private final ApartmentRepository apartmentRepository;
@@ -56,10 +62,9 @@ public class DataInitializer implements CommandLineRunner {
         apartments.forEach(apartmentRepository::save);
 
         List<ApartmentResident> residents = List.of(
-                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1", "11111111-1111-1111-1111-111111111111", "OWNER", "PERMANENT", 10),
-                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2", "bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaa1", "22222222-2222-2222-2222-222222222222", "TENANT", "TEMPORARY", 8),
-                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3", "cccccccc-aaaa-aaaa-aaaa-aaaaaaaaaaa3", "44444444-4444-4444-4444-444444444444", "OWNER", "PERMANENT", 6),
-                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee4", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4", "55555555-5555-5555-5555-555555555555", "TENANT", "TEMPORARY", 4));
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee1", APARTMENT_A101, RESIDENT_A101, "OWNER", "PERMANENT", 10),
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2", APARTMENT_A102, RESIDENT_A102, "TENANT", "TEMPORARY", 8),
+                resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3", APARTMENT_B101, RESIDENT_B101, "OWNER", "PERMANENT", 6));
 
         cleanupResidents(residents);
         residents.forEach(apartmentResidentRepository::save);

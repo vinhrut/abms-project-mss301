@@ -20,16 +20,17 @@ import org.springframework.stereotype.Component;
 public class DataInitializer implements CommandLineRunner {
 
     private static final String DEFAULT_PASSWORD = "11111111";
-    private static final UUID ADMIN_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
     private static final UUID BUILDING_A = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
     private static final UUID BUILDING_B = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
     private static final UUID BUILDING_C = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
-    private static final UUID MANAGER_1_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
-    private static final UUID MANAGER_2_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
-    private static final UUID RESIDENT_1_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID RESIDENT_2_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
-    private static final UUID RESIDENT_3_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
-    private static final UUID RESIDENT_4_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
+    private static final UUID ADMIN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID MANAGER_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    private static final UUID MANAGER_B_ID = UUID.fromString("00000000-0000-0000-0000-000000000102");
+    private static final UUID RESIDENT_A101_ID = UUID.fromString("00000000-0000-0000-0000-000000001101");
+    private static final UUID RESIDENT_A102_ID = UUID.fromString("00000000-0000-0000-0000-000000001102");
+    private static final UUID RESIDENT_B101_ID = UUID.fromString("00000000-0000-0000-0000-000000001201");
+    private static final UUID STAFF_A_ID = UUID.fromString("00000000-0000-0000-0000-000000002101");
+    private static final UUID TECHNICIAN_A_ID = UUID.fromString("00000000-0000-0000-0000-000000003101");
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
@@ -44,8 +45,10 @@ public class DataInitializer implements CommandLineRunner {
         seedRole(5, RoleNames.TECHNICIAN);
 
         Role residentRole = roleRepository.findByRoleName(RoleNames.RESIDENT).orElseThrow();
+        Role staffRole = roleRepository.findByRoleName(RoleNames.STAFF).orElseThrow();
         Role managerRole = roleRepository.findByRoleName(RoleNames.MANAGER).orElseThrow();
         Role adminRole = roleRepository.findByRoleName(RoleNames.ADMIN).orElseThrow();
+        Role technicianRole = roleRepository.findByRoleName(RoleNames.TECHNICIAN).orElseThrow();
 
         List<User> seedUsers = List.of(
                 User.builder()
@@ -53,15 +56,15 @@ public class DataInitializer implements CommandLineRunner {
                 .role(adminRole)
                 .email("admin@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .fullName("System Admin")
+                .fullName("System Administrator")
                 .phone("0900000000")
                 .idCard("ID-ADMIN-001")
                 .status(UserStatus.ACTIVE)
                 .build(),
                 User.builder()
-                .userId(MANAGER_1_ID)
+                .userId(MANAGER_A_ID)
                 .role(managerRole)
-                .email("manager1@abms.local")
+                .email("manager.a@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .fullName("Manager Building A")
                 .phone("0900000001")
@@ -71,9 +74,9 @@ public class DataInitializer implements CommandLineRunner {
                 .createdBy(ADMIN_ID)
                 .build(),
                 User.builder()
-                .userId(MANAGER_2_ID)
+                .userId(MANAGER_B_ID)
                 .role(managerRole)
-                .email("manager2@abms.local")
+                .email("manager.b@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .fullName("Manager Building B")
                 .phone("0900000002")
@@ -83,52 +86,64 @@ public class DataInitializer implements CommandLineRunner {
                 .createdBy(ADMIN_ID)
                 .build(),
                 User.builder()
-                .userId(RESIDENT_1_ID)
+                .userId(RESIDENT_A101_ID)
                 .role(residentRole)
-                .email("resident1@abms.local")
+                .email("resident.a101@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .fullName("Resident One")
+                .fullName("Resident A101 Owner")
                 .phone("0900000011")
                 .idCard("ID-RESIDENT-001")
                 .status(UserStatus.ACTIVE)
                 .buildingId(BUILDING_A)
-                .createdBy(MANAGER_1_ID)
+                .createdBy(MANAGER_A_ID)
                 .build(),
                 User.builder()
-                .userId(RESIDENT_2_ID)
+                .userId(RESIDENT_A102_ID)
                 .role(residentRole)
-                .email("resident2@abms.local")
+                .email("resident.a102@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .fullName("Resident Two")
+                .fullName("Resident A102 Tenant")
                 .phone("0900000012")
                 .idCard("ID-RESIDENT-002")
                 .status(UserStatus.ACTIVE)
-                .buildingId(BUILDING_B)
-                .createdBy(MANAGER_2_ID)
+                .buildingId(BUILDING_A)
+                .createdBy(MANAGER_A_ID)
                 .build(),
                 User.builder()
-                .userId(RESIDENT_3_ID)
+                .userId(RESIDENT_B101_ID)
                 .role(residentRole)
-                .email("resident3@abms.local")
+                .email("resident.b101@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .fullName("Resident Three")
+                .fullName("Resident B101 Owner")
                 .phone("0900000013")
                 .idCard("ID-RESIDENT-003")
                 .status(UserStatus.ACTIVE)
-                .buildingId(BUILDING_C)
-                .createdBy(ADMIN_ID)
+                .buildingId(BUILDING_B)
+                .createdBy(MANAGER_B_ID)
                 .build(),
                 User.builder()
-                .userId(RESIDENT_4_ID)
-                .role(residentRole)
-                .email("resident4@abms.local")
+                .userId(STAFF_A_ID)
+                .role(staffRole)
+                .email("staff.a@abms.local")
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .fullName("Resident Four")
-                .phone("0900000014")
-                .idCard("ID-RESIDENT-004")
+                .fullName("Staff Building A")
+                .phone("0900000021")
+                .idCard("ID-STAFF-001")
                 .status(UserStatus.ACTIVE)
                 .buildingId(BUILDING_A)
-                .createdBy(MANAGER_1_ID)
+                .createdBy(MANAGER_A_ID)
+                .build(),
+                User.builder()
+                .userId(TECHNICIAN_A_ID)
+                .role(technicianRole)
+                .email("technician.a@abms.local")
+                .password(passwordEncoder.encode(DEFAULT_PASSWORD))
+                .fullName("Technician Building A")
+                .phone("0900000031")
+                .idCard("ID-TECHNICIAN-001")
+                .status(UserStatus.ACTIVE)
+                .buildingId(BUILDING_A)
+                .createdBy(MANAGER_A_ID)
                 .build());
 
         cleanupUsers(seedUsers);
