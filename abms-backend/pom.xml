@@ -17,11 +17,36 @@
         <module>auth-service</module>
         <module>apartment-service</module>
         <module>vehicle-service</module>
+        <module>notification-service</module>
+        <module>report-service</module>
     </modules>
 
     <properties>
         <java.version>17</java.version>
         <spring.boot.version>3.2.6</spring.boot.version>
         <spring-cloud.version>2023.0.2</spring-cloud.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
     </properties>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.version}</version>
+                    <executions>
+                        <execution>
+                            <id>repackage</id>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
