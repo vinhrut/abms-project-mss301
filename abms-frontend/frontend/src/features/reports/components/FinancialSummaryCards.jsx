@@ -1,0 +1,2 @@
+const money = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0)
+export function FinancialSummaryCards({ report }) { return <section className="stats-grid">{[['Tổng lập hóa đơn', report.totalInvoiced], ['Đã thu', report.totalCollected], ['Chờ thanh toán', report.totalPending], ['Quá hạn', report.totalOverdue]].map(([label, value]) => <article className="stat-card" key={label}><span className="stat-card__title">{label}</span><strong>{money(value)}</strong></article>)}</section> }
