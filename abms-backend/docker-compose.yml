@@ -103,12 +103,9 @@ services:
       - "8084:8084"
     environment:
       JAVA_TOOL_OPTIONS: "${JAVA_TOOL_OPTIONS:--Xms64m -Xmx256m}"
-      DB_URL: jdbc:postgresql://postgres:5432/abms_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-password123}
-    depends_on:
-      postgres:
-        condition: service_healthy
+      DB_URL: ${NOTIFICATION_DB_URL:-jdbc:sqlserver://host.docker.internal:1433;databaseName=abms_db_notification;encrypt=true;trustServerCertificate=true}
+      DB_USERNAME: ${NOTIFICATION_DB_USERNAME:-sa1}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-123456}
     networks:
       - abms-network
 
@@ -125,12 +122,9 @@ services:
       - "8085:8085"
     environment:
       JAVA_TOOL_OPTIONS: "${JAVA_TOOL_OPTIONS:--Xms64m -Xmx256m}"
-      DB_URL: jdbc:postgresql://postgres:5432/abms_db
-      DB_USERNAME: ${DB_USERNAME:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-password123}
-    depends_on:
-      postgres:
-        condition: service_healthy
+      DB_URL: ${REPORT_DB_URL:-jdbc:sqlserver://host.docker.internal:1433;databaseName=abms_db_report;encrypt=true;trustServerCertificate=true}
+      DB_USERNAME: ${REPORT_DB_USERNAME:-sa1}
+      DB_PASSWORD: ${REPORT_DB_PASSWORD:-123456}
     networks:
       - abms-network
 

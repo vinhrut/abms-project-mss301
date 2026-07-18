@@ -47,6 +47,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String email = jwtUtil.extractEmail(token);
         String role = jwtUtil.extractRole(token);
         String userId = jwtUtil.extractUserId(token);
+        String buildingId = jwtUtil.extractBuildingId(token);
 
         ServerWebExchange mutatedExchange = exchange.mutate()
                 .request(builder -> {
@@ -56,6 +57,9 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     }
                     if (userId != null) {
                         builder.header("X-User-Id", userId);
+                    }
+                    if (buildingId != null) {
+                        builder.header("X-Building-Id", buildingId);
                     }
                 })
                 .build();

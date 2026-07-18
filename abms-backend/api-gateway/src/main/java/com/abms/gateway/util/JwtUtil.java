@@ -43,6 +43,11 @@ public class JwtUtil {
         return userId != null ? userId.toString() : null;
     }
 
+    public String extractBuildingId(String token) {
+        Object buildingId = extractAllClaims(token).get("buildingId");
+        return buildingId != null ? buildingId.toString() : null;
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())

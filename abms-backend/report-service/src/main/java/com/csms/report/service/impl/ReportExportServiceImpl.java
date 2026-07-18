@@ -57,6 +57,7 @@ public class ReportExportServiceImpl implements ReportExportService {
                             report.year()
                     )
             ));
+            document.add(new Paragraph("As of: " + report.asOfDate()));
 
             document.add(new Paragraph(
                     "Generated at: " + report.generatedAt()
@@ -169,6 +170,9 @@ public class ReportExportServiceImpl implements ReportExportService {
             periodRow.createCell(1).setCellValue(
                     "%02d/%d".formatted(report.month(), report.year())
             );
+            Row asOfRow = sheet.createRow(rowIndex++);
+            asOfRow.createCell(0).setCellValue("As of");
+            asOfRow.createCell(1).setCellValue(report.asOfDate().toString());
 
             rowIndex++;
 

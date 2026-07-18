@@ -33,35 +33,25 @@ public class InvoiceNotificationDataRepository {
     }
 
     public Set<UUID> findEligibleResidentIds(YearMonth period) {
-        LocalDate lastDay = period.atEndOfMonth();
-        Set<UUID> result = new LinkedHashSet<>();
+        LocalDate from = period.atDay(1);
+        LocalDate to = period.plusMonths(1).atDay(1);
+        RuntimeException lastFailure = null;
 
         for (String sql : residentQueries()) {
             try {
                 List<UUID> ids = jdbcTemplate.query(sql,
-                    (rs, rowNum) -> rs.getObject("user_id", UUID.class),
-                    Date.valueOf(lastDay), Date.valueOf(lastDay));
+                    (rs, rowNum) -> toUuid(rs.getObject("user_id")),
+                    Date.valueOf(from), Date.valueOf(to));
+                Set<UUID> result = new LinkedHashSet<>();
                 ids.stream().filter(java.util.Objects::nonNull).forEach(result::add);
-                if (!result.isEmpty()) return result;
-            } catch (RuntimeException ignored) {
-                // Try fallback schema.
+                return result;
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
             }
         }
 
-        // Fallback for projects that have apartment_residents but contracts are not implemented yet.
-        try {
-            List<UUID> ids = jdbcTemplate.query(
-                "SELECT DISTINCT user_id FROM apartment_residents WHERE UPPER(COALESCE(status,'ACTIVE')) = 'ACTIVE'",
-                (rs, rowNum) -> rs.getObject("user_id", UUID.class));
-            ids.stream().filter(java.util.Objects::nonNull).forEach(result::add);
-        } catch (RuntimeException ignored) {
-            // handled below
-        }
-
-        if (result.isEmpty()) {
-            throw new IllegalStateException("No eligible residents found or contract schema is incompatible.");
-        }
-        return result;
+        throw new IllegalStateException(
+            "Cannot resolve invoice recipients from the canonical billing/resident schema.", lastFailure);
     }
 
     private List<String> invoiceCountQueries() {
@@ -74,8 +64,27 @@ public class InvoiceNotificationDataRepository {
 
     private List<String> residentQueries() {
         return List.of(
-            "SELECT DISTINCT user_id FROM contracts WHERE UPPER(COALESCE(status,'ACTIVE')) = 'ACTIVE' AND start_date <= ? AND end_date >= ?",
-            "SELECT DISTINCT resident_id AS user_id FROM contracts WHERE UPPER(COALESCE(status,'ACTIVE')) = 'ACTIVE' AND start_date <= ? AND end_date >= ?"
+            // Canonical schema: only residents attached to an apartment with an invoice
+            // in the requested period are eligible. This prevents broadcasting to every
+            // active contract when an invoice was not generated for that apartment.
+            "SELECT DISTINCT ar.user_id FROM invoices i JOIN apartment_residents ar ON ar.apartment_id = i.apartment_id "
+                + "WHERE i.billing_period >= ? AND i.billing_period < ? "
+                + "AND UPPER(COALESCE(i.status,'UNPAID')) <> 'CANCELLED' "
+                + "AND UPPER(COALESCE(ar.status,'ACTIVE')) = 'ACTIVE'",
+            "SELECT DISTINCT c.user_id FROM invoices i JOIN contracts c ON c.apartment_id = i.apartment_id "
+                + "WHERE i.billing_period >= ? AND i.billing_period < ? "
+                + "AND UPPER(COALESCE(i.status,'UNPAID')) <> 'CANCELLED' "
+                + "AND UPPER(COALESCE(c.status,'ACTIVE')) = 'ACTIVE'",
+            "SELECT DISTINCT c.resident_id AS user_id FROM invoices i JOIN contracts c ON c.apartment_id = i.apartment_id "
+                + "WHERE i.billing_period >= ? AND i.billing_period < ? "
+                + "AND UPPER(COALESCE(i.status,'UNPAID')) <> 'CANCELLED' "
+                + "AND UPPER(COALESCE(c.status,'ACTIVE')) = 'ACTIVE'"
         );
+    }
+
+    private UUID toUuid(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID uuid) return uuid;
+        return UUID.fromString(value.toString());
     }
 }

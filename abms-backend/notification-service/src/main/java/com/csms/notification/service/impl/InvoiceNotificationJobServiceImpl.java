@@ -76,18 +76,26 @@ public class InvoiceNotificationJobServiceImpl implements InvoiceNotificationJob
 
             Set<UUID> recipients = dataRepository.findEligibleResidentIds(period);
             run.setRecipientCount(recipients.size());
+            if (recipients.isEmpty()) {
+                run.setStatus(InvoiceNotificationJobStatus.SKIPPED);
+                run.setErrorMessage("No eligible invoice recipients found for " + key);
+                finish(run);
+                auditLogService.log(effectiveActor, "SKIP_INVOICE_NOTIFICATION_JOB", key + ":NO_RECIPIENTS");
+                return toDto(run);
+            }
 
             String title = "Monthly invoice available - " + String.format("%02d/%d", period.getMonthValue(), period.getYear());
             String content = "Your apartment invoice for " + String.format("%02d/%d", period.getMonthValue(), period.getYear())
                 + " is now available. Please review the invoice and complete payment before the due date.";
 
             var notification = notificationService.createInvoiceNotification(
-                title, content, recipients, effectiveActor);
+                title, content, recipients, effectiveActor, "INVOICE_NOTIFICATION:" + key);
 
             // createInvoiceNotification handles delivery failures internally and
             // returns FAILED instead of throwing. Do not mark the job successful
             // when the notification itself was not delivered.
-            if (notification.getStatus() == NotificationStatus.FAILED) {
+            if (notification.getStatus() == NotificationStatus.FAILED
+                    || notification.getStatus() == NotificationStatus.PARTIAL_FAILED) {
                 run.setSentCount(0);
                 run.setFailedCount(recipients.size());
                 run.setStatus(InvoiceNotificationJobStatus.FAILED);

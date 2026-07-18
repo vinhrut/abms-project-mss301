@@ -33,6 +33,9 @@ public class Notification {
     @Column(name = "recipient_group", nullable = false, length = 50)
     private String recipientGroup = "ALL";
 
+    @Column(name = "building_id")
+    private UUID buildingId;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "notification_channels", joinColumns = @JoinColumn(name = "notification_id"))
     @Enumerated(EnumType.STRING)
@@ -40,7 +43,7 @@ public class Notification {
     private Set<DeliveryChannel> channels = new HashSet<>();
 
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
-    private NotificationStatus status = NotificationStatus.PENDING;
+    private NotificationStatus status = NotificationStatus.PENDING_APPROVAL;
 
     @Column(name = "created_by")
     private UUID createdBy;
@@ -50,12 +53,25 @@ public class Notification {
     private LocalDateTime createdAt;
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
+    @Column(name = "rejected_by")
+    private UUID rejectedBy;
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
     @Column(name = "failure_reason", length = 1000)
     private String failureReason;
+
+    @Column(name = "source_key", unique = true, length = 150)
+    private String sourceKey;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     @PrePersist
     void onCreate() {

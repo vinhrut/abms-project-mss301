@@ -1,0 +1,23 @@
+# IDE and editor state
+.idea/
+*.iml
+
+# Java/Maven build output
+**/target/
+
+# Runtime logs and temporary API payloads
+*.log
+abms-backend/admin-login.json
+abms-backend/pending-login.json
+abms-backend/vehicle-bad.json
+abms-backend/vehicle-ok.json
+
+# Local environment files (keep templates)
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Operating-system files
+.DS_Store
+Thumbs.db

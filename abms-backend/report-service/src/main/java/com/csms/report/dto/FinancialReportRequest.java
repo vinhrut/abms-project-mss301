@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public record FinancialReportRequest(
         @NotNull(message = "Month is required")
@@ -17,9 +18,10 @@ public record FinancialReportRequest(
         Integer year,
 
         @NotBlank(message = "Format is required")
+        @Pattern(regexp = "(?i)PDF|EXCEL|XLSX", message = "Format must be PDF, EXCEL or XLSX")
         String format
 ) {
     public String normalizedFormat() {
-        return format.trim().toUpperCase();
+        return format.trim().toUpperCase(java.util.Locale.ROOT);
     }
 }

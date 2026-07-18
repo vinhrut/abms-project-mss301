@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,39 +23,42 @@ public class FinancialReportServiceImpl implements FinancialReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public FinancialReportDTO generate(int month, int year) {
+    public FinancialReportDTO generate(int month, int year, UUID buildingId) {
         validatePeriod(month, year);
+        LocalDate asOfDate = YearMonth.of(year, month).atEndOfMonth();
 
         BigDecimal totalInvoiced =
-                financialReportRepository.getTotalInvoiced(month, year);
+                financialReportRepository.getTotalInvoiced(month, year, buildingId);
 
         BigDecimal totalCollected =
-                financialReportRepository.getTotalCollected(month, year);
+                financialReportRepository.getTotalCollected(month, year, buildingId);
 
         BigDecimal totalPending =
-                financialReportRepository.getTotalPending(month, year);
+                financialReportRepository.getTotalPending(month, year, asOfDate, buildingId);
 
         BigDecimal totalOverdue =
-                financialReportRepository.getTotalOverdue(month, year);
+                financialReportRepository.getTotalOverdue(month, year, asOfDate, buildingId);
 
         List<RevenueBreakdownDTO> breakdown =
                 financialReportRepository.getRevenueBreakdown(
                         month,
                         year,
-                        totalCollected
+                        totalCollected,
+                        buildingId
                 );
 
         return new FinancialReportDTO(
                 month,
                 year,
+                asOfDate,
                 totalInvoiced,
                 totalCollected,
                 totalPending,
                 totalOverdue,
-                financialReportRepository.countAllInvoices(month, year),
-                financialReportRepository.countPaidInvoices(month, year),
-                financialReportRepository.countPendingInvoices(month, year),
-                financialReportRepository.countOverdueInvoices(month, year),
+                financialReportRepository.countAllInvoices(month, year, buildingId),
+                financialReportRepository.countPaidInvoices(month, year, buildingId),
+                financialReportRepository.countPendingInvoices(month, year, asOfDate, buildingId),
+                financialReportRepository.countOverdueInvoices(month, year, asOfDate, buildingId),
                 breakdown,
                 LocalDateTime.now()
         );
