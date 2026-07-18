@@ -1,16 +1,101 @@
 services:
-  postgres:
+  auth-db:
     image: postgres:15
-    container_name: abms-db
+    container_name: abms-auth-db
     restart: always
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: abms_db
+      POSTGRES_DB: auth_db
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
     networks:
       - abms-network
+
+  apartment-db:
+    image: postgres:15
+    container_name: abms-apartment-db
+    restart: always
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: apartment_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - apartment-db-data:/var/lib/postgresql/data
+    networks:
+      - abms-network
+
+  vehicle-db:
+    image: postgres:15
+    container_name: abms-vehicle-db
+    restart: always
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: vehicle_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - vehicle-db-data:/var/lib/postgresql/data
+    networks:
+      - abms-network
+
+  billing-db:
+    image: postgres:15
+    container_name: abms-billing-db
+    restart: always
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: billing_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - billing-db-data:/var/lib/postgresql/data
+    networks:
+      - abms-network
+
+  maintenance-db:
+    image: postgres:15
+    container_name: abms-maintenance-db
+    restart: always
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_DB: maintenance_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - maintenance-db-data:/var/lib/postgresql/data
+    networks:
+      - abms-network
+
+  notification-db:
+    image: postgres:15
+    container_name: abms-notification-db
+    restart: always
+    ports:
+      - "5438:5432"
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - abms-network
+
+volumes:
+  auth-db-data:
+  apartment-db-data:
+  vehicle-db-data:
+  billing-db-data:
+  maintenance-db-data:
+  notification-db-data:
 
 networks:
   abms-network:

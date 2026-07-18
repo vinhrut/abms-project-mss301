@@ -1,16 +1,66 @@
 {
     "sqltools.connections": [
         {
-            "ssh": "Disabled",
-            "previewLimit": 50,
+            "name": "ABMS Auth DB",
+            "driver": "PostgreSQL",
             "server": "localhost",
             "port": 5433,
-            "driver": "PostgreSQL",
-            "name": "abms-db-local",
-            "database": "abms_db",
+            "database": "auth_db",
             "username": "admin",
-            "password": "password123"
+            "password": "password123",
+            "ssl": false
+        },
+        {
+            "name": "ABMS Apartment DB",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5434,
+            "database": "apartment_db",
+            "username": "admin",
+            "password": "password123",
+            "ssl": false
+        },
+        {
+            "name": "ABMS Vehicle DB",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5435,
+            "database": "vehicle_db",
+            "username": "admin",
+            "password": "password123",
+            "ssl": false
+        },
+        {
+            "name": "ABMS Billing DB",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5436,
+            "database": "billing_db",
+            "username": "admin",
+            "password": "password123",
+            "ssl": false
+        },
+        {
+            "name": "ABMS Maintenance DB",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5437,
+            "database": "maintenance_db",
+            "username": "admin",
+            "password": "password123",
+            "ssl": false
+        },
+        {
+            "name": "ABMS Notification DB",
+            "driver": "PostgreSQL",
+            "server": "localhost",
+            "port": 5438,
+            "database": "notification_db",
+            "username": "admin",
+            "password": "password123",
+            "ssl": false
         }
     ],
-    "java.debug.settings.onBuildFailureProceed": true
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.compile.nullAnalysis.mode": "automatic"
 }

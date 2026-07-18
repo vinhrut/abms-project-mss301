@@ -6,8 +6,30 @@
             "server": "localhost",
             "port": 5433,
             "driver": "PostgreSQL",
-            "name": "abms-postgres",
-            "database": "abms_db",
+            "name": "abms-auth-db",
+            "database": "auth_db",
+            "username": "admin",
+            "password": "password123"
+        },
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5434,
+            "driver": "PostgreSQL",
+            "name": "abms-apartment-db",
+            "database": "apartment_db",
+            "username": "admin",
+            "password": "password123"
+        },
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5435,
+            "driver": "PostgreSQL",
+            "name": "abms-vehicle-db",
+            "database": "vehicle_db",
             "username": "admin",
             "password": "password123"
         }
