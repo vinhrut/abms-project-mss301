@@ -27,6 +27,18 @@ spring:
           uri: http://localhost:8083
           predicates:
             - Path=/api/v1/vehicles/**
+        - id: finance-service-services
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/services/**
+        - id: finance-service-invoices
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/invoices/**
+        - id: finance-service-payments
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/payments/**
 
 jwt:
   secret: DayLaChuoiSecretKeyCuaDuAnABMSCanPhaiDaiHon256Bits

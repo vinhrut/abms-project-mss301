@@ -15,6 +15,7 @@ export const APP_ROUTES = {
   contracts: '/app/contracts',
   invoices: '/app/invoices',
   payments: '/app/payments',
+  vnpayResult: '/app/payments/vnpay-result',
   maintenance: '/app/maintenance',
   maintenanceTasks: '/app/maintenance/my-tasks',
   vehicles: '/app/vehicles',

@@ -7,6 +7,7 @@ Use this document as the **single source of truth** to generate the frontend for
 Frontend scope in this phase is limited to:
 - **Authentication**
 - **Vehicle management**
+- **Billing (invoices & payments)**
 
 The goal is to produce frontend code that is:
 - accurate with the current backend APIs
@@ -22,6 +23,8 @@ The goal is to produce frontend code that is:
 - The backend modules currently relevant for frontend are:
   - `auth-service`
   - `vehicle-service`
+  - `automated-finance-service` (billing & payment)
+  - `apartment-service` (apartment list / active residence lookup used by billing UI)
 - The frontend should **consume existing APIs**, not redesign backend contracts.
 - If some business rule is unclear, prefer a safe UI assumption and keep the code easy to adjust.
 
@@ -45,7 +48,17 @@ Implement:
 - Approve vehicle action
 - Reject vehicle action
 
-Do **not** implement unrelated modules such as apartment, billing, maintenance, or notification.
+### 3.3 Billing management
+Implement:
+- Invoice list with filters (apartment, billing month, status)
+- Create invoice from electricity/water meter readings (staff/manager/admin)
+- VietQR view for unpaid invoices
+- Confirm VietQR payment (elevated roles)
+- Record cash payment with collector tracking (elevated roles)
+- VNPay sandbox payment for unpaid invoices (resident + elevated): create payment URL → redirect → return/IPN updates invoice
+- Payment history list (all payments for elevated roles; apartment-filtered for residents)
+
+Do **not** implement unrelated modules such as maintenance or notification in this phase.
 
 ---
 
@@ -336,6 +349,181 @@ Frontend behavior:
 
 ---
 
+### 6.4 Billing APIs
+
+Base paths:
+
+```text
+/api/v1/services
+/api/v1/invoices
+/api/v1/payments
+```
+
+Supporting apartment APIs (for FE dropdowns / resident mode):
+
+```text
+GET /api/v1/apartments
+GET /api/v1/apartments/residents/user/{userId}/active
+```
+
+#### A. List billing services
+
+```http
+GET /api/v1/services
+Authorization: Bearer <token>
+```
+
+Expected response:
+
+```json
+[
+  {
+    "serviceId": 1,
+    "name": "Electricity",
+    "unitPrice": 3500.0,
+    "unit": "kWh"
+  }
+]
+```
+
+#### B. Create invoice from meter readings
+
+```http
+POST /api/v1/invoices/meter-readings
+Content-Type: application/json
+Authorization: Bearer <token>
+```
+
+Request body:
+
+```json
+{
+  "apartmentId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+  "billingMonth": "2026-07-01",
+  "readings": [
+    { "serviceId": 1, "oldIndex": 100, "newIndex": 150 },
+    { "serviceId": 2, "oldIndex": 20, "newIndex": 25 }
+  ]
+}
+```
+
+Expected response includes `invoiceId`, `invoiceCode`, `totalAmount`, `paidAmount`, `remainingAmount`, `status`, `displayStatus`, and `details[]`.
+
+Frontend behavior:
+- elevated roles only for create
+- validate `newIndex >= oldIndex`
+- refresh invoice list after success
+
+#### C. List / filter invoices
+
+```http
+GET /api/v1/invoices?apartmentId={uuid}&billingMonth=2026-07-01&status=UNPAID
+GET /api/v1/invoices/apartment/{apartmentId}
+GET /api/v1/invoices/{invoiceId}
+Authorization: Bearer <token>
+```
+
+Statuses stored: `UNPAID` | `PARTIAL` | `PAID`.  
+`displayStatus` may be `OVERDUE` when billing month is past and not paid.
+
+#### D. VietQR (test)
+
+```http
+GET /api/v1/payments/vietqr/{invoiceId}
+Authorization: Bearer <token>
+```
+
+Response includes `qrImageUrl`, `amount`, `transferContent` (= invoice code), bank account fields.
+
+```http
+POST /api/v1/payments/vietqr/confirm
+Content-Type: application/json
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "invoiceId": "........",
+  "payerId": "00000000-0000-0000-0000-000000001101",
+  "paidAmount": 265000
+}
+```
+
+#### E. Cash payment
+
+```http
+POST /api/v1/payments/cash
+Content-Type: application/json
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "invoiceId": "........",
+  "payerId": "00000000-0000-0000-0000-000000001101",
+  "collectorId": "00000000-0000-0000-0000-000000002101",
+  "paidAmount": 100000
+}
+```
+
+#### F. VNPay sandbox
+
+Register sandbox credentials at http://sandbox.vnpayment.vn/devreg/ and set env `VNPAY_TMN_CODE` / `VNPAY_HASH_SECRET` on `automated-finance-service`. Do not commit real secrets.
+
+```http
+POST /api/v1/payments/vnpay/create
+Content-Type: application/json
+Authorization: Bearer <token>
+```
+
+```json
+{
+  "invoiceId": "........",
+  "payerId": "00000000-0000-0000-0000-000000001101"
+}
+```
+
+Response:
+
+```json
+{
+  "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?...",
+  "txnRef": "....",
+  "amount": 265000
+}
+```
+
+Frontend should redirect the browser to `paymentUrl`. Amount is the full remaining balance (no partial VNPay in this demo).
+
+Public callbacks (no JWT; whitelisted on API gateway):
+
+```http
+GET /api/v1/payments/vnpay/return?...vnp_*
+```
+
+Verifies HMAC, applies payment idempotently by `vnp_TxnRef`, then **302** redirects to:
+
+`http://localhost:5173/app/payments/vnpay-result?success=true&invoiceCode=...&txnRef=...&message=...`
+
+```http
+GET /api/v1/payments/vnpay/ipn?...vnp_*
+```
+
+Same verify + apply logic; responds `{ "RspCode": "00", "Message": "Confirm Success" }` (or `97`/`01`/`02`/`04` per VNPay rules). Local demo works via return URL without ngrok; IPN needs a public tunnel if you register it on the VNPay portal.
+
+Payment method stored: `VNPAY`.
+
+#### G. Payment history
+
+```http
+GET /api/v1/payments
+GET /api/v1/payments?apartmentId={uuid}
+GET /api/v1/payments/invoice/{invoiceId}
+Authorization: Bearer <token>
+```
+
+---
+
 ## 7) Frontend data models
 
 Use these shapes exactly.
@@ -379,6 +567,51 @@ export interface VehicleResponse {
   brand: string;
   status: string;
 }
+
+export interface InvoiceDetailResponse {
+  detailId: string;
+  serviceId: number;
+  serviceName: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface InvoiceResponse {
+  invoiceId: string;
+  apartmentId: string;
+  invoiceCode: string;
+  billingMonth: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: string;
+  displayStatus: string;
+  details: InvoiceDetailResponse[];
+}
+
+export interface PaymentResponse {
+  paymentId: string;
+  invoiceId: string;
+  invoiceCode: string;
+  payerId: string;
+  collectorId?: string | null;
+  paidAmount: number;
+  paymentMethod: string;
+  paymentTime: string;
+}
+
+export interface VietQrResponse {
+  invoiceId: string;
+  invoiceCode: string;
+  amount: number;
+  bankBin: string;
+  accountNo: string;
+  accountName: string;
+  transferContent: string;
+  qrImageUrl: string;
+}
 ```
 
 ### Auth storage shape
@@ -402,10 +635,12 @@ Create these pages:
 3. `DashboardPage`
 4. `VehicleListPage`
 5. `VehicleCreatePage`
-6. `NotFoundPage`
+6. `InvoiceListPage`
+7. `PaymentListPage`
+8. `NotFoundPage`
 
 Optional:
-7. `UnauthorizedPage`
+9. `UnauthorizedPage`
 
 ---
 
@@ -419,13 +654,16 @@ Recommended routes:
 /
 /vehicles
 /vehicles/create
+/app/invoices
+/app/payments
+/app/payments/vnpay-result
 /unauthorized (optional)
 *
 ```
 
 Rules:
 - `/login` and `/register` are public routes
-- `/`, `/vehicles`, `/vehicles/create` are private routes
+- `/`, `/vehicles`, `/vehicles/create`, `/app/invoices`, `/app/payments`, `/app/payments/vnpay-result` are private routes
 - unauthenticated access to private routes should redirect to `/login`
 - unknown routes should go to `NotFoundPage`
 
@@ -506,6 +744,23 @@ If role policy is uncertain, make that condition centralized and easy to modify.
 
 ---
 
+### 10.3 Billing flow
+
+#### Invoice list flow
+- elevated roles: load all invoices (optional filters apartment / month / status)
+- residents: resolve active residence via apartment API, then load invoices by apartment
+- each row shows code, apartment, month, amounts, status/displayStatus, line details
+- staff can create invoices from electricity/water meter readings on the same page
+- unpaid rows expose VietQR and VNPay; elevated roles also get Confirm QR and Cash actions
+- VNPay: call create → redirect to sandbox → return lands on `/app/payments/vnpay-result`
+
+#### Payment list flow
+- elevated roles: load all payments
+- residents: load payments filtered by apartmentId
+- show method (`CASH` / `VIETQR` / `VNPAY`), amount, invoice reference, payer, collector, time
+
+---
+
 ## 11) Validation requirements
 
 Frontend validation should mirror backend as closely as possible.
@@ -527,6 +782,16 @@ Frontend validation should mirror backend as closely as possible.
 - `licensePlate`: required
 - `type`: required
 - `brand`: required
+
+### Meter invoice create
+- `apartmentId`: required UUID
+- `billingMonth`: required
+- electricity/water old & new indexes: required, `new >= old`, `>= 0`
+
+### Cash / VietQR confirm
+- `invoiceId`, `payerId`: required UUID
+- `collectorId`: required UUID for cash
+- `paidAmount`: required, `> 0`
 
 Optional enhancement:
 - validate UUID format for `apartmentId` and `ownerId`
@@ -587,6 +852,8 @@ The generated frontend should include:
 4. separated API modules:
    - `authApi`
    - `vehicleApi`
+   - `invoiceService` / `paymentService`
+   - `apartmentService` (for apartment dropdown + active residence)
 
 Avoid calling axios directly inside page components if possible.
 
@@ -697,6 +964,14 @@ Consider the frontend implementation correct only if all conditions below are me
 - vehicle list renders all expected fields
 - approve action updates status correctly
 - reject action updates status correctly
+
+### Billing
+- staff can create invoice from meter readings
+- invoice list supports elevated vs resident modes
+- VietQR can be generated for unpaid invoices
+- cash and VietQR confirm update paid amount / status
+- VNPay sandbox create + return updates invoice / creates `VNPAY` payment (idempotent)
+- payment list shows transaction history
 
 ### Technical
 - API base URL comes from env config

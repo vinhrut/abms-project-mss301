@@ -16,7 +16,11 @@ import reactor.core.publisher.Mono;
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/v1/auth/**"
+            "/api/v1/auth/**",
+            "/api/v1/payments/vnpay/return",
+            "/api/v1/payments/vnpay/return/**",
+            "/api/v1/payments/vnpay/ipn",
+            "/api/v1/payments/vnpay/ipn/**"
     );
 
     private final JwtUtil jwtUtil;
@@ -28,7 +32,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
-        String requestPath = exchange.getRequest().getURI().getPath();
+        String requestPath = normalizePath(exchange.getRequest().getURI().getPath());
 
         if (isPublicPath(requestPath) || isPreflightRequest(exchange)) {
             return chain.filter(exchange);
@@ -70,6 +74,16 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private boolean isPublicPath(String requestPath) {
         return PUBLIC_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
+    }
+
+    private String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+        if (path.length() > 1 && path.endsWith("/")) {
+            return path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
     private boolean isPreflightRequest(ServerWebExchange exchange) {

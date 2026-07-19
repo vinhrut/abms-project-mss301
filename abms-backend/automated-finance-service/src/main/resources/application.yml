@@ -5,10 +5,12 @@ spring:
   application:
     name: automated-finance-service
   datasource:
-    url: jdbc:postgresql://localhost:5433/abms_db
+    url: jdbc:postgresql://localhost:5436/billing_db
     username: admin
     password: password123
+    driver-class-name: org.postgresql.Driver
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     properties:
@@ -16,9 +18,26 @@ spring:
         format_sql: true
     show-sql: false
 
-jwt:
-  secret: DayLaChuoiSecretKeyCuaDuAnABMSCanPhaiDaiHon256Bits
-
 services:
   apartment-service:
     url: http://localhost:8082
+
+vietqr:
+  bank-bin: "970422"
+  account-no: "9704198526191432198"
+  account-name: "ABMS BUILDING"
+  template: "compact2"
+
+# Sandbox credentials: https://sandbox.vnpayment.vn/merchantv2/ (or register at /devreg/)
+# Error.html?code=71 = TmnCode/HashSecret sai hoặc không khớp. Không dùng secret giả.
+# Set VNPAY_TMN_CODE / VNPAY_HASH_SECRET via env (do not commit real secrets).
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:RLWIBAAQ}
+  hash-secret: ${VNPAY_HASH_SECRET:BK7M5GPLFPK66MNGPBL8VZRWH2VAULOY}
+  pay-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: http://localhost:8080/api/v1/payments/vnpay/return
+  ipn-url: http://localhost:8080/api/v1/payments/vnpay/ipn
+  frontend-result-url: http://localhost:5173/app/payments/vnpay-result
+  version: "2.1.0"
+  order-type: other
+  expire-minutes: 15
