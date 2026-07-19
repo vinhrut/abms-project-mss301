@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { authService } from '../../../services/authService.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'

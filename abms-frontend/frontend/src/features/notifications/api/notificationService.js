@@ -1,39 +1,14 @@
-import axios from 'axios'
+import { apiClient } from '../../../services/apiClient.js'
 
-const notificationClient = axios.create({
-  baseURL: import.meta.env.VITE_NOTIFICATION_API_URL || 'http://localhost:8084',
-  headers: { 'Content-Type': 'application/json' },
-})
-
-const authHeaders = (auth) => ({
-  'X-User-Id': auth?.userId,
-  'X-User-Role': auth?.roleName,
-})
+const clean = (params = {}) => Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value != null))
 
 export const notificationService = {
-  async create(payload, auth) {
-    const { data } = await notificationClient.post('/api/v1/notifications/announce', payload, { headers: authHeaders(auth) })
-    return data
-  },
-  async list(params, auth) {
-    const cleanParams = Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value != null))
-    const { data } = await notificationClient.get('/api/v1/notifications', { params: cleanParams, headers: authHeaders(auth) })
-    return data
-  },
-  async detail(id, auth) {
-    const { data } = await notificationClient.get(`/api/v1/notifications/${id}`, { headers: authHeaders(auth) })
-    return data
-  },
-  async approve(id, auth) {
-    const { data } = await notificationClient.put(`/api/v1/notifications/${id}/approve`, null, { headers: authHeaders(auth) })
-    return data
-  },
-  async markRead(id, auth) {
-    const { data } = await notificationClient.put(`/api/v1/notifications/${id}/read`, null, { headers: authHeaders(auth) })
-    return data
-  },
-  async retryFailed(auth) {
-    const { data } = await notificationClient.post('/api/v1/notifications/retry-failed', null, { headers: authHeaders(auth) })
-    return data
-  },
+  async list(params = {}) { const { data } = await apiClient.get('/api/v1/notifications', { params: clean(params) }); return data },
+  async detail(id) { const { data } = await apiClient.get(`/api/v1/notifications/${id}`); return data },
+  async markRead(id) { const { data } = await apiClient.put(`/api/v1/notifications/${id}/read`); return data },
+  async create(payload) { const { data } = await apiClient.post('/api/v1/notifications/announce', payload); return data },
+  async approve(id) { const { data } = await apiClient.put(`/api/v1/notifications/${id}/approve`); return data },
+  async reject(id, reason) { const { data } = await apiClient.put(`/api/v1/notifications/${id}/reject`, null, { params: { reason } }); return data },
+  async cancel(id) { const { data } = await apiClient.put(`/api/v1/notifications/${id}/cancel`); return data },
+  async retryFailed() { const { data } = await apiClient.post('/api/v1/notifications/retry-failed'); return data },
 }

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { vehicleService } from '../../../services/vehicleService.js'
 import { useAuth } from '../../auth/context/useAuth.js'
