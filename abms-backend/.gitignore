@@ -9,5 +9,3 @@ target/
 .vscode/
 *.iml
 
-# Chặn các file log tự sinh ra khi chạy dự án
-*.log

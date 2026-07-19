@@ -19,6 +19,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/auth/**"
     );
 
+
+
+
+
+
+    
+
     private final JwtUtil jwtUtil;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
