@@ -10,6 +10,7 @@ import { RegisterPage } from './features/auth/pages/RegisterPage.jsx'
 import { ResidentApprovalPage } from './features/auth/pages/ResidentApprovalPage.jsx'
 import { InvoiceListPage } from './features/billing/pages/InvoiceListPage.jsx'
 import { PaymentListPage } from './features/billing/pages/PaymentListPage.jsx'
+import { VnPayResultPage } from './features/billing/pages/VnPayResultPage.jsx'
 import { BuildingListPage } from './features/buildings/pages/BuildingListPage.jsx'
 import { ContractListPage } from './features/contracts/pages/ContractListPage.jsx'
 import { DashboardPage } from './features/dashboard/pages/DashboardPage.jsx'
@@ -51,6 +52,7 @@ function App() {
           <Route path={APP_ROUTES.contracts} element={<ContractListPage />} />
           <Route path={APP_ROUTES.invoices} element={<InvoiceListPage />} />
           <Route path={APP_ROUTES.payments} element={<PaymentListPage />} />
+          <Route path={APP_ROUTES.vnpayResult} element={<VnPayResultPage />} />
           <Route path={APP_ROUTES.maintenance} element={<MaintenanceListPage />} />
           <Route path={APP_ROUTES.maintenanceSubmit} element={<MaintenanceSubmitPage />} />
           <Route path={APP_ROUTES.maintenanceTasks} element={<MyTasksPage />} />
