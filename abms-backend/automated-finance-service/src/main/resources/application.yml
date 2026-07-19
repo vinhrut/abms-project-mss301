@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8086
 
 spring:
   application:
@@ -18,9 +18,9 @@ spring:
         format_sql: true
     show-sql: false
 
-services:
-  apartment-service:
-    url: http://localhost:8082
+# services:
+#   apartment-service:
+#     url: http://localhost:8082
 
 vietqr:
   bank-bin: "970422"
