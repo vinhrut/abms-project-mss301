@@ -3,6 +3,24 @@
     "configurations": [
         {
             "type": "java",
+            "name": "VehicleApplication",
+            "request": "launch",
+            "mainClass": "com.abms.vehicle.VehicleApplication",
+            "projectName": "vehicle-service",
+            "cwd": "${workspaceFolder}/abms-backend/vehicle-service",
+            "preLaunchTask": "Maven: compile vehicle-service"
+        },
+        {
+            "type": "java",
+            "name": "AuthApplication",
+            "request": "launch",
+            "mainClass": "com.abms.auth.AuthApplication",
+            "projectName": "auth-service",
+            "cwd": "${workspaceFolder}/abms-backend/auth-service",
+            "preLaunchTask": "Maven: compile auth-service"
+        },
+        {
+            "type": "java",
             "name": "NotificationServiceApplication",
             "request": "launch",
             "mainClass": "com.csms.notification.NotificationServiceApplication",

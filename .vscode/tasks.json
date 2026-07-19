@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Maven: compile auth-service",
+            "type": "shell",
+            "command": "mvn",
+            "args": [
+                "-pl",
+                "auth-service",
+                "-am",
+                "compile",
+                "-DskipTests"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/abms-backend"
+            },
+            "group": "build",
+            "problemMatcher": "$maven"
+        },
+        {
+            "label": "Maven: compile vehicle-service",
+            "type": "shell",
+            "command": "mvn",
+            "args": [
+                "-pl",
+                "vehicle-service",
+                "-am",
+                "compile",
+                "-DskipTests"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/abms-backend"
+            },
+            "group": "build",
+            "problemMatcher": "$maven"
+        }
+    ]
+}
