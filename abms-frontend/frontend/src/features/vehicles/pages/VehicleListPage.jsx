@@ -480,8 +480,7 @@ export function VehicleListPage() {
             </article>
           </div>
 
-          {error ? <div className="alert alert-error">{error}</div> : null}
-          {message ? <div className="alert alert-success">{message}</div> : null}
+        
           {loading ? <div className="page-status">Đang tải dữ liệu phương tiện...</div> : null}
 
           {!loading && approvedVehicles.length === 0 ? (
@@ -605,6 +604,9 @@ export function VehicleListPage() {
           </form>
         </section>
       ) : null}
+      {error ? <div className="alert alert-error">{error}</div> : null}
+      {message ? <div className="alert alert-success">{message}</div> : null}
+      
 
       {isResident ? (
         <section className="content-card">
@@ -734,8 +736,7 @@ export function VehicleListPage() {
           </div>
         ) : null}
 
-        {error ? <div className="alert alert-error">{error}</div> : null}
-        {message ? <div className="alert alert-success">{message}</div> : null}
+        
         {loading ? <div className="page-status">Đang tải dữ liệu phương tiện...</div> : null}
 
         {!loading && vehicles.length === 0 ? (
