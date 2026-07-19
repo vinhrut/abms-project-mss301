@@ -23,6 +23,10 @@ spring:
           uri: http://localhost:8082
           predicates:
             - Path=/api/v1/apartments/**
+        - id: apartment-service-contracts
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/contracts/**
         - id: vehicle-service
           uri: http://localhost:8083
           predicates:

@@ -1,0 +1,11 @@
+# Chặn toàn bộ thư mục build target của Java
+**/target/
+target/
+*.class
+*.jar
+
+# Chặn các file cấu hình ẩn của IDE
+.idea/
+.vscode/
+*.iml
+
