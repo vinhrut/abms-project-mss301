@@ -3,6 +3,17 @@ import { PageIntro } from '../../../components/ui/PageIntro.jsx'
 import { apartmentService } from '../../../services/apartmentService.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 
+function getBuildingIdFromToken(token) {
+  if (!token) return ''
+  try {
+    const [, payload] = token.split('.')
+    const decoded = JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return decoded.buildingId || ''
+  } catch {
+    return ''
+  }
+}
+
 function fmt(dateStr) {
   if (!dateStr) return '-'
   try {
@@ -14,7 +25,7 @@ function fmt(dateStr) {
 
 export function ContractListPage() {
   const { auth } = useAuth()
-  const buildingId = auth?.buildingId
+  const buildingId = auth?.buildingId || getBuildingIdFromToken(auth?.token || '')
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,7 +35,7 @@ export function ContractListPage() {
 
   useEffect(() => {
     loadContracts()
-  }, [])
+  }, [buildingId])
 
   async function loadContracts() {
     try {
