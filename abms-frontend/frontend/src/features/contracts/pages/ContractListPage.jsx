@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { PageIntro } from '../../../components/ui/PageIntro.jsx'
 import { apartmentService } from '../../../services/apartmentService.js'
 import { useAuth } from '../../auth/context/useAuth.js'
-import { format as formatDateFns } from 'date-fns'
 
 function fmt(dateStr) {
   if (!dateStr) return '-'
