@@ -12,6 +12,9 @@ abms-backend/pending-login.json
 abms-backend/vehicle-bad.json
 abms-backend/vehicle-ok.json
 
+# Local database IDE session files
+*.session.sql
+
 # Local environment files (keep templates)
 .env
 **/.env
