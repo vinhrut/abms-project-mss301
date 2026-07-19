@@ -328,6 +328,105 @@ public class ApartmentServiceImpl implements ApartmentService {
         return mapResident(resident);
     }
 
+    // --- contracts listing and management ---
+    @Override
+    public java.util.List<com.abms.apartment.dto.ContractResponse> listContracts(String authorizationHeader, UUID buildingId) {
+        java.util.List<com.abms.apartment.entity.Contract> contracts;
+        if (buildingId != null) {
+            // collect apartment ids under building
+            var apartmentIds = apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
+                    .stream()
+                    .map(Apartment::getApartmentId)
+                    .toList();
+            if (apartmentIds.isEmpty()) return java.util.List.of();
+            contracts = contractRepository.findByApartmentIdInOrderByStartDateDesc(apartmentIds);
+        } else {
+            contracts = contractRepository.findAll();
+        }
+
+        // map and enrich
+        return contracts.stream().map(c -> mapContract(c, authorizationHeader)).toList();
+    }
+
+    @Override
+    public com.abms.apartment.dto.ContractResponse getContractById(String authorizationHeader, UUID contractId) {
+        var c = contractRepository.findById(contractId).orElse(null);
+        if (c == null) return null;
+        return mapContract(c, authorizationHeader);
+    }
+
+    @Override
+    @Transactional
+    public com.abms.apartment.dto.ContractResponse renewContract(String authorizationHeader, java.util.UUID contractId, com.abms.apartment.dto.RenewContractRequest request) {
+        var oldOpt = contractRepository.findById(contractId);
+        if (oldOpt.isEmpty()) throw new ResourceNotFoundException("Contract not found: " + contractId);
+        var old = oldOpt.get();
+
+        // expire old
+        old.setStatus("EXPIRED");
+        contractRepository.save(old);
+
+        // determine start date (day after old end date) or provided
+        java.time.LocalDate start = request.getStartDate();
+        if (start == null) {
+            start = (old.getEndDate() == null) ? java.time.LocalDate.now() : old.getEndDate().plusDays(1);
+        }
+
+        // create new contract
+        var newContract = com.abms.apartment.entity.Contract.builder()
+                .contractId(UUID.randomUUID())
+                .apartmentId(old.getApartmentId())
+                .userId(old.getUserId())
+                .contractType(old.getContractType() == null ? "TEMPORARY" : old.getContractType())
+                .startDate(start)
+                .endDate(request.getEndDate())
+                .deposit(request.getDeposit())
+                .status("ACTIVE")
+                .build();
+        contractRepository.save(newContract);
+
+        return mapContract(newContract);
+    }
+
+    private com.abms.apartment.dto.ContractResponse mapContract(com.abms.apartment.entity.Contract contract, String authorizationHeader) {
+        var resp = com.abms.apartment.dto.ContractResponse.builder()
+                .contractId(contract.getContractId())
+                .apartmentId(contract.getApartmentId())
+                .userId(contract.getUserId())
+                .contractType(contract.getContractType())
+                .startDate(contract.getStartDate())
+                .endDate(contract.getEndDate())
+                .deposit(contract.getDeposit())
+                .status(contract.getStatus())
+                .build();
+
+        // enrich with user info (try to forward authorization if provided)
+        try {
+            UserResponse user = null;
+            try {
+                user = authFeignClient.getUserById(contract.getUserId().toString(), authorizationHeader);
+            } catch (RuntimeException e) {
+                // fallback: try without header
+                try { user = authFeignClient.getUserById(contract.getUserId().toString(), null); } catch (RuntimeException ignored) {}
+            }
+            if (user != null) {
+                resp.setUserFullName(user.getFullName());
+                resp.setUserEmail(user.getEmail());
+                resp.setUserPhone(user.getPhone());
+            }
+        } catch (RuntimeException ignored) {
+        }
+
+        // apartment info
+        try {
+            var apt = apartmentRepository.findById(contract.getApartmentId()).orElse(null);
+            if (apt != null) resp.setApartmentRoomNumber(apt.getRoomNumber());
+        } catch (RuntimeException ignored) {
+        }
+
+        return resp;
+    }
+
     private String normalizeValue(String value, String defaultValue) {
         if (value == null || value.isBlank()) {
             return defaultValue;

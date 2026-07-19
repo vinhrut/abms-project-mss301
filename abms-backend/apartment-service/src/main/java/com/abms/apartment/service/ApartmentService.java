@@ -27,6 +27,13 @@ public interface ApartmentService {
 
     ApartmentResidentResponse removeResidentFromApartment(String authorizationHeader, UUID apartmentId, UUID userId);
 
+    // contract listing and management
+    java.util.List<com.abms.apartment.dto.ContractResponse> listContracts(String authorizationHeader, UUID buildingId);
+
+    com.abms.apartment.dto.ContractResponse getContractById(String authorizationHeader, UUID contractId);
+
+    com.abms.apartment.dto.ContractResponse renewContract(String authorizationHeader, java.util.UUID contractId, com.abms.apartment.dto.RenewContractRequest request);
+
     ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request);
 
     List<ApartmentResidentResponse> getPendingResidentRegistrations();

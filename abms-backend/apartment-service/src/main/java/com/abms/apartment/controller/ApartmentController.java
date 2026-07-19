@@ -77,6 +77,7 @@ public class ApartmentController {
         return ResponseEntity.ok(apartmentService.removeResidentFromApartment(authorizationHeader, apartmentId, userId));
     }
 
+
     @PostMapping("/residents/registrations")
     public ResponseEntity<ApartmentResidentResponse> createResidentRegistration(
             @Valid @RequestBody ResidentRegistrationRequest request) {
