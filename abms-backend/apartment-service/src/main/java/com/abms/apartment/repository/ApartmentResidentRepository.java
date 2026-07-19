@@ -16,5 +16,9 @@ public interface ApartmentResidentRepository extends JpaRepository<ApartmentResi
 
     List<ApartmentResident> findByStatusOrderByCreatedAtAsc(String status);
 
+    List<ApartmentResident> findByApartmentIdInAndStatusOrderByCreatedAtAsc(List<UUID> apartmentIds, String status);
+
+    List<ApartmentResident> findByApartmentIdOrderByCreatedAtAsc(UUID apartmentId);
+
     boolean existsByApartmentIdAndUserIdAndStatus(UUID apartmentId, UUID userId, String status);
 }

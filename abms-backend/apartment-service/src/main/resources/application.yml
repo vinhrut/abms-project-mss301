@@ -17,3 +17,6 @@ spring:
       hibernate:
         format_sql: true
     show-sql: false
+
+jwt:
+  secret: DayLaChuoiSecretKeyCuaDuAnABMSCanPhaiDaiHon256Bits

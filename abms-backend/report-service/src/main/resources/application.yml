@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: report-service
+  datasource:
+    url: ${REPORT_DB_URL:${DB_URL:jdbc:sqlserver://localhost:1433;databaseName=abms_db_report;encrypt=true;trustServerCertificate=true}}
+    username: ${REPORT_DB_USERNAME:${DB_USERNAME:sa1}}
+    password: ${REPORT_DB_PASSWORD:${DB_PASSWORD:123456}}
+    driver-class-name: ${REPORT_DB_DRIVER:com.microsoft.sqlserver.jdbc.SQLServerDriver}
+    hikari:
+      maximum-pool-size: ${REPORT_DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${REPORT_DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${REPORT_DB_CONNECTION_TIMEOUT_MS:30000}
+      validation-timeout: ${REPORT_DB_VALIDATION_TIMEOUT_MS:5000}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

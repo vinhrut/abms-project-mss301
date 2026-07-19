@@ -23,6 +23,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/payments/vnpay/ipn/**"
     );
 
+
+
+
+
+
+    
+
     private final JwtUtil jwtUtil;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -55,6 +62,9 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
         ServerWebExchange mutatedExchange = exchange.mutate()
                 .request(builder -> {
+                    // forward original Authorization header so downstream services receive it
+                    builder.header(HttpHeaders.AUTHORIZATION, authHeader);
+
                     builder.header("X-User-Email", email != null ? email : jwtUtil.extractSubject(token));
                     if (role != null) {
                         builder.header("X-User-Role", role);

@@ -24,4 +24,18 @@ public class ApartmentResidentResponse {
     private LocalDateTime createdAt;
     private LocalDateTime approvedAt;
     private LocalDateTime rejectedAt;
+
+    private String userFullName;
+    private String userEmail;
+    private String userPhone;
+    private String userIdCard;
+    private String userRoleName;
+
+    // contract info
+    private java.util.UUID contractId;
+    private String contractType;
+    private java.time.LocalDate contractStartDate;
+    private java.time.LocalDate contractEndDate;
+    private java.math.BigDecimal contractDeposit;
+    private String contractStatus;
 }

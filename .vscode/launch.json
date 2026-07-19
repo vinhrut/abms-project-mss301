@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.csms.notification.NotificationServiceApplication",
+            "projectName": "notification-service"
+        },
+        {
+            "type": "java",
+            "name": "GatewayApplication",
+            "request": "launch",
+            "mainClass": "com.abms.gateway.GatewayApplication",
+            "projectName": "api-gateway"
+        },
+        {
+            "type": "java",
+            "name": "ApartmentApplication",
+            "request": "launch",
+            "mainClass": "com.abms.apartment.ApartmentApplication",
+            "projectName": "apartment-service"
+        },
+        {
+            "type": "java",
+            "name": "FinanceApplication :8086",
+            "request": "launch",
+            "mainClass": "com.abms.finance.FinanceApplication",
+            "projectName": "automated-finance-service",
+            "cwd": "${workspaceFolder}/abms-backend/automated-finance-service",
+            "args": "--server.port=8086"
+        }
+    ]
+}
