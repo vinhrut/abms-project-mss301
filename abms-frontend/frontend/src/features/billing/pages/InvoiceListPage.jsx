@@ -69,7 +69,6 @@ export function InvoiceListPage() {
   const [cashErrors, setCashErrors] = useState({})
   const [expandedId, setExpandedId] = useState(null)
   const [focusInvoiceId, setFocusInvoiceId] = useState('')
-
   const selectedApartment = useMemo(
     () => apartments.find((item) => item.apartmentId === apartmentId) || null,
     [apartments, apartmentId],

@@ -110,6 +110,14 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    public List<VehicleResponse> getVehiclesByApartmentId(CurrentUser actor, UUID apartmentId) {
+        ensureCanManageApartment(actor, apartmentId);
+        return vehicleRepository.findByApartmentId(apartmentId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
     public List<VehicleResponse> getMyVehicles(CurrentUser actor) {
         ensureRole(actor, RoleNames.RESIDENT);
         return vehicleRepository.findByOwnerIdOrderByStatusAscLicensePlateAsc(actor.getUserId()).stream().map(this::mapToResponse).toList();

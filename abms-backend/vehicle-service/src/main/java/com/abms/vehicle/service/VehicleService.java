@@ -16,6 +16,8 @@ public interface VehicleService {
 
     VehicleResponse getVehicleById(CurrentUser actor, UUID vehicleId);
 
+    List<VehicleResponse> getVehiclesByApartmentId(CurrentUser actor, UUID apartmentId);
+
     VehicleResponse approveVehicle(CurrentUser actor, UUID vehicleId);
 
     VehicleResponse rejectVehicle(CurrentUser actor, UUID vehicleId);

@@ -28,6 +28,11 @@ export const vehicleService = {
     return data
   },
 
+  async getVehiclesByApartmentId(apartmentId) {
+    const { data } = await apiClient.get(`/api/v1/vehicles/apartment/${apartmentId}`)
+    return Array.isArray(data) ? data : []
+  },
+
   async updateVehicleStatus(vehicleId, status) {
     const endpoint =
       status === 'APPROVED'

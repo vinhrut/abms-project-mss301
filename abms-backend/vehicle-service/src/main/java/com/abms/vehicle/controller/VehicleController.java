@@ -77,6 +77,16 @@ public class VehicleController {
         return ResponseEntity.ok(vehicleService.getMyVehicles(resolve(userId, role, buildingId)));
     }
 
+    @GetMapping("/apartment/{apartmentId}")
+    public ResponseEntity<List<VehicleResponse>> getVehiclesByApartmentId(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader(value = "X-Building-Id", required = false) String buildingId,
+            @PathVariable("apartmentId") UUID apartmentId) {
+        return ResponseEntity.ok(
+                vehicleService.getVehiclesByApartmentId(resolve(userId, role, buildingId), apartmentId));
+    }
+
     @GetMapping("/{vehicleId}")
     public ResponseEntity<VehicleResponse> getVehicleById(
             @RequestHeader("X-User-Id") String userId,
@@ -85,6 +95,7 @@ public class VehicleController {
             @PathVariable("vehicleId") UUID vehicleId) {
         return ResponseEntity.ok(vehicleService.getVehicleById(resolve(userId, role, buildingId), vehicleId));
     }
+
 
     @PostMapping("/{vehicleId}/approve")
     public ResponseEntity<VehicleResponse> approveVehicle(
