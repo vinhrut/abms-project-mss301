@@ -210,6 +210,48 @@ export function ApartmentListPage() {
                                 <td>{resident.relationship || '-'}</td>
                                 <td>{resident.residenceType || '-'}</td>
                                 <td><span className={getStatusClass(resident.status)}>{resident.status || '-'}</span></td>
+                                <td>
+                                  {resident.residenceType === 'TEMPORARY' ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        onClick={async () => {
+                                          try {
+                                            setLoadingResidents(true)
+                                            await apartmentService.renewResidentContract(selectedApartment.apartmentId, resident.userId)
+                                            // refresh
+                                            const refreshed = await apartmentService.getApartmentResidentsByApartmentId(selectedApartment.apartmentId)
+                                            setSelectedApartmentResidents(Array.isArray(refreshed) ? refreshed : [])
+                                          } catch (err) {
+                                            setError(extractApiErrorMessage(err, 'Không thể gia hạn hợp đồng'))
+                                          } finally {
+                                            setLoadingResidents(false)
+                                          }
+                                        }}
+                                      >Gia hạn</button>
+
+                                      <button
+                                        type="button"
+                                        className="btn btn-danger btn-sm"
+                                        style={{ marginLeft: 8 }}
+                                        onClick={async () => {
+                                          if (!window.confirm('Bạn có chắc muốn gỡ cư dân này khỏi căn hộ?')) return
+                                          try {
+                                            setLoadingResidents(true)
+                                            await apartmentService.removeResidentFromApartment(selectedApartment.apartmentId, resident.userId)
+                                            const refreshed = await apartmentService.getApartmentResidentsByApartmentId(selectedApartment.apartmentId)
+                                            setSelectedApartmentResidents(Array.isArray(refreshed) ? refreshed : [])
+                                          } catch (err) {
+                                            setError(extractApiErrorMessage(err, 'Không thể xóa cư dân'))
+                                          } finally {
+                                            setLoadingResidents(false)
+                                          }
+                                        }}
+                                      >Xóa</button>
+                                    </>
+                                  ) : null}
+                                </td>
                               </tr>
                             ))}
                           </tbody>

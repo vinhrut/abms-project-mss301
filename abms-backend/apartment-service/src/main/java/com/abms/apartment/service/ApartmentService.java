@@ -19,6 +19,14 @@ public interface ApartmentService {
 
     List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId);
 
+    List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId);
+
+    List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId);
+
+    ApartmentResidentResponse renewResidentContract(String authorizationHeader, UUID apartmentId, UUID userId);
+
+    ApartmentResidentResponse removeResidentFromApartment(String authorizationHeader, UUID apartmentId, UUID userId);
+
     ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request);
 
     List<ApartmentResidentResponse> getPendingResidentRegistrations();
