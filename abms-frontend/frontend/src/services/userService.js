@@ -25,4 +25,13 @@ export const userService = {
     const { data } = await apiClient.post(`/api/v1/users/${userId}/unlock`)
     return data
   },
+
+  async getUserById(userId) {
+    if (!userId) {
+      return null
+    }
+
+    const { data } = await apiClient.get(`/api/v1/users/${userId}`)
+    return data
+  },
 }

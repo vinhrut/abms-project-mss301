@@ -10,6 +10,7 @@ com\abms\apartment\repository\BuildingRepository.class
 com\abms\apartment\entity\Apartment$ApartmentBuilder.class
 com\abms\apartment\config\DataInitializer.class
 com\abms\apartment\repository\ApartmentRepository.class
+com\abms\apartment\security\BuildingAccessService.class
 com\abms\apartment\dto\ApartmentResidentResponse.class
 com\abms\apartment\dto\ResidentRegistrationRequest.class
 com\abms\apartment\dto\BuildingResponse.class
