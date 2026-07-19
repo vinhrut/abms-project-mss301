@@ -17,6 +17,7 @@
         <module>auth-service</module>
         <module>apartment-service</module>
         <module>vehicle-service</module>
+        <module>maintenance-service</module>
     </modules>
 
     <properties>
