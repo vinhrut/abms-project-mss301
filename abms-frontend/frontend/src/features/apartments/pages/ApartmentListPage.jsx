@@ -6,16 +6,14 @@ import { extractApiErrorMessage } from '../../../utils/apiError.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 import { FeaturePlaceholderPage } from '../../shared/FeaturePlaceholderPage.jsx'
 
-function getBuildingIdFromToken(token) {
-  try {
-    const [, payload] = token.split('.')
-    return JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).buildingId || ''
-  } catch {
-    return ''
-  }
+function formatDateRange(startDate, endDate) {
+  if (!startDate) return '-'
+  const start = new Date(startDate).toLocaleDateString('vi-VN')
+  const end = endDate ? new Date(endDate).toLocaleDateString('vi-VN') : 'Vĩnh viễn'
+  return `${start} - ${end}`
 }
 
-function getStatusClass(status) {
+export function ApartmentListPage() {
   if (status === 'OCCUPIED' || status === 'ACTIVE') return 'badge badge-success'
   if (status === 'VACANT' || status === 'AVAILABLE') return 'badge badge-warning'
   return 'badge'
@@ -29,6 +27,7 @@ export function ApartmentListPage() {
   const [loading, setLoading] = useState(false)
   const [loadingResidents, setLoadingResidents] = useState(false)
   const [error, setError] = useState('')
+  const [confirmModal, setConfirmModal] = useState({ visible: false, residentId: null, resident: null })
   const managerBuildingId = auth?.buildingId || getBuildingIdFromToken(auth?.token || '')
   const isManager = normalizedRole === ROLE_KEYS.MANAGER
 
@@ -190,7 +189,7 @@ export function ApartmentListPage() {
                       </div>
                     ) : (
                       <div style={{ overflowX: 'auto' }}>
-                        <table className="data-table" style={{ minWidth: 700 }}>
+                        <table className="data-table" style={{ minWidth: 900 }}>
                           <thead>
                             <tr>
                               <th>Họ tên</th>
@@ -198,7 +197,9 @@ export function ApartmentListPage() {
                               <th>Điện thoại</th>
                               <th>Vai trò</th>
                               <th>Loại cư trú</th>
+                              <th>Hợp đồng</th>
                               <th>Trạng thái</th>
+                              <th></th>
                             </tr>
                           </thead>
                           <tbody>
@@ -209,8 +210,11 @@ export function ApartmentListPage() {
                                 <td>{resident.userPhone || '-'}</td>
                                 <td>{resident.relationship || '-'}</td>
                                 <td>{resident.residenceType || '-'}</td>
+                                <td style={{ fontSize: '0.9em', color: '#555' }}>
+                                  {formatDateRange(resident.contractStartDate, resident.contractEndDate)}
+                                </td>
                                 <td><span className={getStatusClass(resident.status)}>{resident.status || '-'}</span></td>
-                                <td>
+                                <td style={{ whiteSpace: 'nowrap' }}>
                                   {resident.residenceType === 'TEMPORARY' ? (
                                     <>
                                       <button
@@ -220,7 +224,6 @@ export function ApartmentListPage() {
                                           try {
                                             setLoadingResidents(true)
                                             await apartmentService.renewResidentContract(selectedApartment.apartmentId, resident.userId)
-                                            // refresh
                                             const refreshed = await apartmentService.getApartmentResidentsByApartmentId(selectedApartment.apartmentId)
                                             setSelectedApartmentResidents(Array.isArray(refreshed) ? refreshed : [])
                                           } catch (err) {
@@ -235,18 +238,8 @@ export function ApartmentListPage() {
                                         type="button"
                                         className="btn btn-danger btn-sm"
                                         style={{ marginLeft: 8 }}
-                                        onClick={async () => {
-                                          if (!window.confirm('Bạn có chắc muốn gỡ cư dân này khỏi căn hộ?')) return
-                                          try {
-                                            setLoadingResidents(true)
-                                            await apartmentService.removeResidentFromApartment(selectedApartment.apartmentId, resident.userId)
-                                            const refreshed = await apartmentService.getApartmentResidentsByApartmentId(selectedApartment.apartmentId)
-                                            setSelectedApartmentResidents(Array.isArray(refreshed) ? refreshed : [])
-                                          } catch (err) {
-                                            setError(extractApiErrorMessage(err, 'Không thể xóa cư dân'))
-                                          } finally {
-                                            setLoadingResidents(false)
-                                          }
+                                        onClick={() => {
+                                          setConfirmModal({ visible: true, residentId: resident.residentId, resident })
                                         }}
                                       >Xóa</button>
                                     </>
@@ -258,6 +251,74 @@ export function ApartmentListPage() {
                         </table>
                       </div>
                     )}
+                  </div>
+                </>
+              ) : null}
+
+              {/* Confirm Modal: Remove Resident */}
+              {confirmModal.visible && confirmModal.resident ? (
+                <>
+                  <div
+                    className="modal-backdrop"
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2000 }}
+                    onClick={() => setConfirmModal({ visible: false, residentId: null, resident: null })}
+                  />
+                  <div
+                    className="modal-content"
+                    role="alertdialog"
+                    aria-modal="true"
+                    style={{
+                      position: 'fixed',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '90%',
+                      maxWidth: 450,
+                      zIndex: 2001,
+                      background: '#fff',
+                      borderRadius: 12,
+                      padding: '2rem',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                      textAlign: 'center',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#333' }}>
+                      Xác nhận xóa cư dân
+                    </h3>
+                    <p style={{ marginBottom: '1.5rem', color: '#666', fontSize: '0.95em' }}>
+                      Bạn có chắc muốn gỡ cư dân <strong>{confirmModal.resident.userFullName}</strong> khỏi căn hộ?
+                      <br />
+                      Trạng thái của cư dân sẽ chuyển sang Inactive.
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setConfirmModal({ visible: false, residentId: null, resident: null })}
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={async () => {
+                          try {
+                            setLoadingResidents(true)
+                            await apartmentService.removeResidentFromApartment(selectedApartment.apartmentId, confirmModal.resident.userId)
+                            const refreshed = await apartmentService.getApartmentResidentsByApartmentId(selectedApartment.apartmentId)
+                            setSelectedApartmentResidents(Array.isArray(refreshed) ? refreshed : [])
+                            setConfirmModal({ visible: false, residentId: null, resident: null })
+                          } catch (err) {
+                            setError(extractApiErrorMessage(err, 'Không thể xóa cư dân'))
+                          } finally {
+                            setLoadingResidents(false)
+                          }
+                        }}
+                      >
+                        Xóa
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : null}
