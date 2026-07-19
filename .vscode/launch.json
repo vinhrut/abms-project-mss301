@@ -3,6 +3,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.csms.notification.NotificationServiceApplication",
+            "projectName": "notification-service"
+        },
+        {
+            "type": "java",
+            "name": "GatewayApplication",
+            "request": "launch",
+            "mainClass": "com.abms.gateway.GatewayApplication",
+            "projectName": "api-gateway"
+        },
+        {
+            "type": "java",
             "name": "ApartmentApplication",
             "request": "launch",
             "mainClass": "com.abms.apartment.ApartmentApplication",

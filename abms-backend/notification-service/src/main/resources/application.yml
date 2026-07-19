@@ -1,0 +1,43 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5438/notification_db
+    username: admin
+    password: password123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+notification:
+  dispatch-delay-ms: 60000
+
+#   server:
+#   port: 8082
+
+# spring:
+#   application:
+#     name: apartment-service
+#   datasource:
+#     url: jdbc:postgresql://localhost:5434/apartment_db
+#     username: admin
+#     password: password123
+#     driver-class-name: org.postgresql.Driver
+#   jpa:
+#     database-platform: org.hibernate.dialect.PostgreSQLDialect
+#     hibernate:
+#       ddl-auto: update
+#     properties:
+#       hibernate:
+#         format_sql: true
+#     show-sql: false
