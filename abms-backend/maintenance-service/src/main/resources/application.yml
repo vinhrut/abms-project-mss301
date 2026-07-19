@@ -1,0 +1,23 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: maintenance-service
+  datasource:
+    url: jdbc:postgresql://localhost:5437/maintenance_db
+    username: admin
+    password: password123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+services:
+  apartment-service:
+    url: http://localhost:8082
