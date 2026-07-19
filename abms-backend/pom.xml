@@ -24,10 +24,15 @@
         <module>auth-service</module>
         <module>apartment-service</module>
         <module>vehicle-service</module>
+        <module>automated-finance-service</module>
+        <module>notification-service</module>
+        <module>maintenance-service</module>
+
     </modules>
 
     <properties>
         <java.version>17</java.version>
+        <spring.boot.version>3.2.6</spring.boot.version>
         <spring-cloud.version>2023.0.2</spring-cloud.version>
         <jjwt.version>0.11.5</jjwt.version>
     </properties>
