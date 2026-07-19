@@ -1,16 +1,14 @@
-import { FeaturePlaceholderPage } from '../../shared/FeaturePlaceholderPage.jsx'
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useState } from 'react'
+import { PageIntro } from '../../../components/ui/PageIntro.jsx'
+import { invoiceNotificationJobService } from '../../notifications/api/invoiceNotificationJobService.js'
+import { extractApiErrorMessage } from '../../../utils/apiError.js'
 
 export function JobMonitorPage() {
-  return (
-    <FeaturePlaceholderPage
-      eyebrow="System jobs"
-      title="Job Monitor"
-      description="Theo dõi các tác vụ nền như auto monthly billing, overdue alerts, contract expiry monitor và notification retry jobs."
-      highlights={[
-        { title: 'Scheduler visibility', description: 'Tổng quan trigger time, success count, failed jobs và retry queue.' },
-        { title: 'Invoice notification monitor', description: 'Bám theo use case automatic monthly invoice notification.' },
-        { title: 'Admin-only console', description: 'Không gian phù hợp cho audit-sensitive, ops-level monitoring.' },
-      ]}
-    />
-  )
+  const now = new Date(); const [period, setPeriod] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`); const [data, setData] = useState({ content: [], totalPages: 0, page: 0 }); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [message, setMessage] = useState('')
+  const load = useCallback(async (page = 0) => { setLoading(true); try { setData(await invoiceNotificationJobService.getHistory(page, 10)) } catch (e) { setError(extractApiErrorMessage(e, 'Không thể tải lịch sử job.')) } finally { setLoading(false) } }, [])
+  useEffect(() => { load() }, [load])
+  const run = async () => { if (!window.confirm(`Chạy job kỳ ${period}?`)) return; setLoading(true); try { await invoiceNotificationJobService.runNow(period); setMessage('Đã yêu cầu chạy job.'); await load(0) } catch (e) { setError(extractApiErrorMessage(e, 'Không thể chạy job.')); setLoading(false) } }
+  const retry = async (id) => { if (!window.confirm('Retry job này?')) return; setLoading(true); try { await invoiceNotificationJobService.retry(id); setMessage('Đã yêu cầu retry.'); await load(data.page || 0) } catch (e) { setError(extractApiErrorMessage(e, 'Không thể retry job.')); setLoading(false) } }
+  return <div className="page-stack"><PageIntro eyebrow="System jobs" title="Invoice notification jobs" description="Theo dõi lịch sử gửi thông báo hóa đơn." actions={<button className="btn btn-secondary" disabled={loading} onClick={() => load(data.page || 0)}>Refresh</button>} /><section className="content-card"><div className="toolbar-grid"><input type="month" aria-label="Billing period" value={period} onChange={e => setPeriod(e.target.value)} /><button className="btn btn-primary" disabled={loading} onClick={run}>Run now</button></div>{error && <div className="alert alert-error">{error}</div>}{message && <div className="alert alert-success">{message}</div>}{loading && <div className="page-status">Đang tải...</div>}{!loading && !data.content?.length && <div className="empty-state">Chưa có job.</div>}<div className="table-card"><table className="data-table"><thead><tr>{['Kỳ','Status','Invoices','Recipients','Sent','Failed','Attempt','Started','Error','Action'].map(x => <th key={x}>{x}</th>)}</tr></thead><tbody>{data.content?.map(x => <tr key={x.id}><td>{x.billingPeriod}</td><td>{x.status}</td><td>{x.invoiceCount}</td><td>{x.recipientCount}</td><td>{x.sentCount}</td><td>{x.failedCount}</td><td>{x.attemptNumber}</td><td>{x.startedAt ? new Date(x.startedAt).toLocaleString('vi-VN') : '-'}</td><td>{x.errorMessage || '-'}</td><td>{['FAILED','SKIPPED'].includes(x.status) && <button disabled={loading} onClick={() => retry(x.id)}>Retry</button>}</td></tr>)}</tbody></table></div><div className="form-actions"><button disabled={loading || !data.page} onClick={() => load(data.page - 1)}>Trước</button><span>Trang {(data.page || 0) + 1}/{Math.max(data.totalPages || 1, 1)}</span><button disabled={loading || (data.page || 0) + 1 >= (data.totalPages || 1)} onClick={() => load(data.page + 1)}>Sau</button></div></section></div>
 }

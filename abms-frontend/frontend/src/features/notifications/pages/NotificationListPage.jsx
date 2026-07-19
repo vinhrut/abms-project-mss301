@@ -1,16 +1,28 @@
-import { FeaturePlaceholderPage } from '../../shared/FeaturePlaceholderPage.jsx'
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useState } from 'react'
+import { PageIntro } from '../../../components/ui/PageIntro.jsx'
+import { notificationService } from '../api/notificationService.js'
+import { extractApiErrorMessage } from '../../../utils/apiError.js'
+import { isRoleIn, ROLE_KEYS } from '../../../config/roles.js'
+import { useAuth } from '../../auth/context/useAuth.js'
+
+const statuses = ['SENT', 'PENDING_APPROVAL', 'APPROVED', 'SCHEDULED', 'PROCESSING', 'PARTIAL_FAILED', 'FAILED', 'REJECTED', 'CANCELLED', 'PENDING']
+const badge = (value) => <span className={`badge badge-${String(value || '').toLowerCase()}`}>{value || '-'}</span>
 
 export function NotificationListPage() {
-  return (
-    <FeaturePlaceholderPage
-      eyebrow="Notifications"
-      title="Notification Center"
-      description="Xem lịch sử thông báo, trạng thái đã đọc/chưa đọc, nội dung chi tiết và lọc theo loại thông báo."
-      highlights={[
-        { title: 'Unified inbox', description: 'In-app notification center cho invoice, maintenance, contract và announcement.' },
-        { title: 'Filter & history', description: 'Khung cho filter theo type, date range, status và recipient.' },
-        { title: 'Announcement integration', description: 'Sẵn để nối create announcement và detail modal ở phase tiếp theo.' },
-      ]}
-    />
-  )
+  const { auth } = useAuth(); const admin = isRoleIn(auth?.roleName, [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER])
+  const [filters, setFilters] = useState({ type: '', status: admin ? '' : 'SENT', from: '', to: '', recipient: '', page: 0, size: 10 })
+  const [data, setData] = useState({ content: [], totalPages: 0 }); const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [message, setMessage] = useState('')
+  const load = useCallback(async () => { setLoading(true); setError(''); try { setData(await notificationService.list(filters)) } catch (e) { setError(extractApiErrorMessage(e, 'Không thể tải thông báo.')) } finally { setLoading(false) } }, [filters])
+  useEffect(() => { load() }, [load])
+  const update = (name, value) => setFilters((old) => ({ ...old, [name]: value, page: 0 }))
+  const act = async (fn, success) => { try { await fn(); setMessage(success); await load() } catch (e) { setError(extractApiErrorMessage(e, 'Thao tác thất bại.')) } }
+  const open = async (item) => { try { const d = await notificationService.detail(item.id); setDetail(d); if (!admin && d.status === 'SENT' && !d.read) { await notificationService.markRead(d.id); setData((old) => ({ ...old, content: old.content.map((x) => x.id === d.id ? { ...x, read: true } : x) })) } } catch (e) { setError(extractApiErrorMessage(e, 'Không thể tải chi tiết.')) } }
+  return <div className="page-stack"><PageIntro eyebrow="Notifications" title="Notification Center" description="Danh sách thông báo theo phạm vi tài khoản." actions={<button className="btn btn-secondary" onClick={load}>Refresh</button>} />
+    <section className="content-card"><div className="toolbar-grid"><select aria-label="Type" value={filters.type} onChange={(e) => update('type', e.target.value)}><option value="">Tất cả loại</option>{['ANNOUNCEMENT','INVOICE','CONTRACT','MAINTENANCE','SYSTEM'].map(x => <option key={x}>{x}</option>)}</select>{admin && <select aria-label="Status" value={filters.status} onChange={(e) => update('status', e.target.value)}><option value="">Tất cả trạng thái</option>{statuses.map(x => <option key={x}>{x}</option>)}</select>}<input type="date" aria-label="From" value={filters.from} onChange={(e) => update('from', e.target.value)} /><input type="date" aria-label="To" value={filters.to} onChange={(e) => update('to', e.target.value)} /><select aria-label="Recipient group" value={filters.recipient} onChange={(e) => update('recipient', e.target.value)}><option value="">Tất cả nhóm</option>{['ALL','RESIDENT','STAFF','TECHNICIAN','USERS'].map(x => <option key={x}>{x}</option>)}</select></div>
+      {error && <div className="alert alert-error">{error}</div>}{message && <div className="alert alert-success">{message}</div>}{loading && <div className="page-status">Đang tải...</div>}{!loading && !data.content?.length && <div className="empty-state">Chưa có thông báo.</div>}
+      {!loading && data.content?.length > 0 && <div className="table-card"><table className="data-table"><thead><tr>{['Title','Type','Priority','Recipient','Ngày tạo','Scheduled','Status','Read'].map(x => <th key={x}>{x}</th>)}</tr></thead><tbody>{data.content.map(x => <tr key={x.id} onClick={() => open(x)}><td>{x.title}</td><td>{x.type}</td><td>{badge(x.priority)}</td><td>{x.recipientGroup}</td><td>{x.createdAt ? new Date(x.createdAt).toLocaleString('vi-VN') : '-'}</td><td>{x.scheduledAt ? new Date(x.scheduledAt).toLocaleString('vi-VN') : '-'}</td><td>{badge(x.status)}</td><td>{x.read ? 'Đã đọc' : 'Chưa đọc'}</td></tr>)}</tbody></table></div>}
+      <div className="form-actions"><button disabled={filters.page <= 0 || loading} onClick={() => setFilters(x => ({ ...x, page: x.page - 1 }))}>Trước</button><span>Trang {filters.page + 1}/{Math.max(data.totalPages || 1, 1)}</span><button disabled={loading || filters.page + 1 >= (data.totalPages || 1)} onClick={() => setFilters(x => ({ ...x, page: x.page + 1 }))}>Sau</button>{admin && <button className="btn btn-danger" onClick={() => act(() => notificationService.retryFailed(), 'Đã yêu cầu retry các notification lỗi.')}>Retry failed</button>}</div>
+    </section>{detail && <div className="modal-backdrop" role="presentation" onClick={() => setDetail(null)}><section className="modal-card" role="dialog" onClick={(e) => e.stopPropagation()}><h2>{detail.title}</h2><p>{detail.content}</p><p>Ngày tạo: {new Date(detail.createdAt).toLocaleString('vi-VN')}</p>{admin && <div className="table-actions">{detail.status === 'PENDING_APPROVAL' && <button onClick={() => act(() => notificationService.approve(detail.id), 'Đã approve.')}>Approve</button>}{['PENDING_APPROVAL','APPROVED','SCHEDULED'].includes(detail.status) && <button onClick={() => act(() => notificationService.cancel(detail.id), 'Đã cancel.')}>Cancel</button>}<button onClick={() => setDetail(null)}>Đóng</button></div>}</section></div>}</div>
 }

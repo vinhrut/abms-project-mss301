@@ -1,16 +1,8 @@
-import { FeaturePlaceholderPage } from '../../shared/FeaturePlaceholderPage.jsx'
+import { useState } from 'react'
+import { PageIntro } from '../../../components/ui/PageIntro.jsx'
+import { FinancialSummaryCards } from '../components/FinancialSummaryCards.jsx'
+import { financialReportService, readReportError } from '../api/financialReportService.js'
+import { extractApiErrorMessage } from '../../../utils/apiError.js'
 
-export function ReportListPage() {
-  return (
-    <FeaturePlaceholderPage
-      eyebrow="Reports & analytics"
-      title="Report List"
-      description="Tạo và tải xuống báo cáo tài chính, occupancy, maintenance và resident operations cho từng kỳ."
-      highlights={[
-        { title: 'Financial report shell', description: 'Khung cho chọn kỳ, format PDF/Excel và generate report.' },
-        { title: 'Dashboard export continuity', description: 'Tương thích với use case export dashboard summary report.' },
-        { title: 'Audit-sensitive access', description: 'Dễ gắn audit logging và phân quyền Admin/Manager.' },
-      ]}
-    />
-  )
-}
+const money = value => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0)
+export function ReportListPage() { const d = new Date(); const [month, setMonth] = useState(d.getMonth() + 1); const [year, setYear] = useState(d.getFullYear()); const [format, setFormat] = useState('PDF'); const [report, setReport] = useState(null); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const preview = async () => { setLoading(true); setError(''); try { setReport(await financialReportService.preview(month, year)) } catch (e) { setError(extractApiErrorMessage(e, 'Không thể tải báo cáo.')) } finally { setLoading(false) } }; const download = async () => { setLoading(true); try { const r = await financialReportService.exportReport({ month: Number(month), year: Number(year), format }); const disposition = r.headers['content-disposition'] || ''; const name = disposition.match(/filename[^;=]*=((['"]).*?\2|[^;]*)/)?.[1]?.replace(/["']/g, '') || `financial-report-${year}-${month}.${format === 'PDF' ? 'pdf' : 'xlsx'}`; const url = URL.createObjectURL(r.data); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url) } catch (e) { const body = await readReportError(e); setError(body?.message || extractApiErrorMessage(e, 'Không thể xuất báo cáo.')) } finally { setLoading(false) } }; return <div className="page-stack"><PageIntro eyebrow="Reports" title="Financial report" description="Xem và tải báo cáo tài chính theo tháng." actions={<button className="btn btn-primary" disabled={loading} onClick={preview}>Preview</button>} /><section className="content-card"><div className="toolbar-grid"><label>Month <input type="number" min="1" max="12" value={month} onChange={e => setMonth(e.target.value)} /></label><label>Year <input type="number" min="2000" value={year} onChange={e => setYear(e.target.value)} /></label><select value={format} onChange={e => setFormat(e.target.value)}><option>PDF</option><option>EXCEL</option></select><button disabled={!report || loading} onClick={download}>Download</button></div>{error && <div className="alert alert-error">{error}</div>}{loading && <div className="page-status">Đang xử lý...</div>}{report && <><FinancialSummaryCards report={report} /><div className="info-grid"><article className="info-card"><strong>Số hóa đơn</strong><p>Tổng: {report.totalInvoices} · Đã thu: {report.paidInvoices} · Chờ: {report.pendingInvoices} · Quá hạn: {report.overdueInvoices}</p></article><article className="info-card"><strong>Kỳ báo cáo</strong><p>Đến ngày {report.asOfDate} · Tạo lúc {new Date(report.generatedAt).toLocaleString('vi-VN')}</p></article></div><h3>Revenue breakdown</h3><table className="data-table"><thead><tr><th>Fee type</th><th>Amount</th><th>Percentage</th></tr></thead><tbody>{(report.revenueBreakdown || []).map(x => <tr key={x.feeType}><td>{x.feeType}</td><td>{money(x.amount)}</td><td><div style={{ width: `${Math.min(Number(x.percentage) || 0, 100)}%`, background: '#2563eb', height: 8 }} /><small>{x.percentage}%</small></td></tr>)}</tbody></table></>}</section></div> }

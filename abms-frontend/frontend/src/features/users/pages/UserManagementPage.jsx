@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 import { PageIntro } from '../../../components/ui/PageIntro.jsx'
 import { ROLE_KEYS } from '../../../config/roles.js'
