@@ -71,6 +71,20 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     @Override
+    public List<ApartmentResponse> getMyApartments(UUID userId) {
+        List<UUID> apartmentIds = apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
+                .stream()
+                .map(ApartmentResident::getApartmentId)
+                .distinct()
+                .toList();
+
+        return apartmentRepository.findAllById(apartmentIds)
+                .stream()
+                .map(this::mapApartment)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request) {
         Apartment apartment = apartmentRepository.findById(request.getApartmentId())

@@ -6,9 +6,7 @@ import com.abms.auth.entity.Role;
 import com.abms.auth.entity.User;
 import com.abms.auth.repository.RoleRepository;
 import com.abms.auth.repository.UserRepository;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -146,21 +144,12 @@ public class DataInitializer implements CommandLineRunner {
                 .createdBy(MANAGER_A_ID)
                 .build());
 
-        cleanupUsers(seedUsers);
         seedUsers.forEach(this::seedUser);
     }
 
-    private void cleanupUsers(List<User> seedUsers) {
-        Set<UUID> allowedUserIds = new HashSet<>();
-        seedUsers.stream().map(User::getUserId).forEach(allowedUserIds::add);
-
-        userRepository.findAll().stream()
-                .filter(existingUser -> !allowedUserIds.contains(existingUser.getUserId()))
-                .forEach(userRepository::delete);
-    }
-
     private void seedUser(User user) {
-        userRepository.findById(user.getUserId())
+        userRepository.findByEmail(user.getEmail())
+                .or(() -> userRepository.findById(user.getUserId()))
                 .ifPresentOrElse(existingUser -> ensureSeedUserState(existingUser, user), () -> userRepository.save(user));
     }
 

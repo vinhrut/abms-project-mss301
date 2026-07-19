@@ -66,7 +66,6 @@ public class DataInitializer implements CommandLineRunner {
                 resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2", APARTMENT_A102, RESIDENT_A102, "TENANT", "TEMPORARY", 8),
                 resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3", APARTMENT_B101, RESIDENT_B101, "OWNER", "PERMANENT", 6));
 
-        cleanupResidents(residents);
         residents.forEach(apartmentResidentRepository::save);
     }
 
@@ -86,15 +85,6 @@ public class DataInitializer implements CommandLineRunner {
         apartmentRepository.findAll().stream()
                 .filter(existingApartment -> !allowedApartmentIds.contains(existingApartment.getApartmentId()))
                 .forEach(apartmentRepository::delete);
-    }
-
-    private void cleanupResidents(List<ApartmentResident> seedResidents) {
-        Set<UUID> allowedResidentIds = new HashSet<>();
-        seedResidents.stream().map(ApartmentResident::getResidentId).forEach(allowedResidentIds::add);
-
-        apartmentResidentRepository.findAll().stream()
-                .filter(existingResident -> !allowedResidentIds.contains(existingResident.getResidentId()))
-                .forEach(apartmentResidentRepository::delete);
     }
 
     private Apartment apartment(String apartmentId, UUID buildingId, String roomNumber, int floor, String area, String status) {

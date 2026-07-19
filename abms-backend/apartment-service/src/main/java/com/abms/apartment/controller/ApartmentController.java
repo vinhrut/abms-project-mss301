@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,6 +31,11 @@ public class ApartmentController {
             return ResponseEntity.ok(apartmentService.getApartmentsByBuildingId(buildingId));
         }
         return ResponseEntity.ok(apartmentService.getAllApartments());
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<ApartmentResponse>> getMyApartments(@RequestHeader("X-User-Id") UUID userId) {
+        return ResponseEntity.ok(apartmentService.getMyApartments(userId));
     }
 
     @GetMapping("/{apartmentId}")

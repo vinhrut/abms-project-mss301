@@ -36,7 +36,7 @@ public class Vehicle {
     @Column(name = "type", nullable = false)
     private String type;
 
-    @Column(name = "brand", nullable = false)
+    @Column(name = "brand")
     private String brand;
 
     @Column(name = "status", nullable = false)

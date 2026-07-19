@@ -39,10 +39,9 @@ public class DataInitializer implements CommandLineRunner {
                 limit("c5555555-5555-5555-5555-555555555555", APARTMENT_B101, "MOTORBIKE", 2),
                 limit("c6666666-6666-6666-6666-666666666666", APARTMENT_B101, "CAR", 1));
 
-        vehicleLimitRepository.findAll().stream()
-                .filter(existingLimit -> limits.stream().noneMatch(seedLimit -> seedLimit.getLimitId().equals(existingLimit.getLimitId())))
-                .forEach(vehicleLimitRepository::delete);
-        vehicleLimitRepository.saveAll(limits);
+        limits.forEach(limit -> vehicleLimitRepository
+                .findByApartmentIdAndVehicleType(limit.getApartmentId(), limit.getVehicleType())
+                .orElseGet(() -> vehicleLimitRepository.save(limit)));
     }
 
     private void seedVehicles() {
@@ -52,10 +51,11 @@ public class DataInitializer implements CommandLineRunner {
                 vehicle("d3333333-3333-3333-3333-333333333333", APARTMENT_A102, RESIDENT_A102, "29A-10201", "MOTORBIKE", "Yamaha Janus", "APPROVED"),
                 vehicle("d4444444-4444-4444-4444-444444444444", APARTMENT_B101, RESIDENT_B101, "29B-10101", "MOTORBIKE", "Honda Air Blade", "PENDING"));
 
-        vehicleRepository.findAll().stream()
-                .filter(existingVehicle -> vehicles.stream().noneMatch(seedVehicle -> seedVehicle.getVehicleId().equals(existingVehicle.getVehicleId())))
-                .forEach(vehicleRepository::delete);
-        vehicleRepository.saveAll(vehicles);
+        vehicles.forEach(vehicle -> {
+            if (!vehicleRepository.existsByLicensePlate(vehicle.getLicensePlate())) {
+                vehicleRepository.save(vehicle);
+            }
+        });
     }
 
     private VehicleLimit limit(String limitId, UUID apartmentId, String vehicleType, int maxQuantity) {

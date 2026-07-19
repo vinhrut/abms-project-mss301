@@ -19,6 +19,8 @@ public class AuthResponse {
 
     private String roleName;
 
+    private String buildingId;
+
     private String email;
 
     private String status;

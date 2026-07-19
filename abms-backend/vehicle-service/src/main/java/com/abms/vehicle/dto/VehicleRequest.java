@@ -17,7 +17,6 @@ public class VehicleRequest {
     @NotNull(message = "Apartment id is required")
     private UUID apartmentId;
 
-    @NotNull(message = "Owner id is required")
     private UUID ownerId;
 
     @NotBlank(message = "License plate is required")
@@ -26,6 +25,5 @@ public class VehicleRequest {
     @NotBlank(message = "Type is required")
     private String type;
 
-    @NotBlank(message = "Brand is required")
     private String brand;
 }

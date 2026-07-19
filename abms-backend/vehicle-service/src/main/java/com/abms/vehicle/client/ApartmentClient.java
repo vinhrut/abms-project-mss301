@@ -3,6 +3,7 @@ package com.abms.vehicle.client;
 import com.abms.vehicle.dto.ApartmentResidentResponse;
 import com.abms.vehicle.dto.ApartmentResponse;
 import com.abms.vehicle.exception.ResourceNotFoundException;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,23 @@ public class ApartmentClient {
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new ResourceNotFoundException("Active residence not found for user: " + userId);
+            }
+            throw ex;
+        }
+    }
+
+    public List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId) {
+        try {
+            ResponseEntity<List<ApartmentResponse>> response = restTemplate.exchange(
+                    apartmentServiceUrl + "/api/v1/buildings/" + buildingId + "/apartments",
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {
+                    });
+            return response.getBody() == null ? List.of() : response.getBody();
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+                throw new ResourceNotFoundException("Building not found: " + buildingId);
             }
             throw ex;
         }

@@ -19,6 +19,8 @@ public interface ApartmentService {
 
     List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId);
 
+    List<ApartmentResponse> getMyApartments(UUID userId);
+
     ApartmentResidentResponse createResidentRegistration(ResidentRegistrationRequest request);
 
     List<ApartmentResidentResponse> getPendingResidentRegistrations();

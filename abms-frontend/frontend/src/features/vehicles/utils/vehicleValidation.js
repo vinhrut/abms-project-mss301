@@ -9,10 +9,6 @@ export function validateVehicleForm(values) {
     errors.apartmentId = 'Apartment ID phải là UUID hợp lệ.'
   }
 
-  if (values.ownerId && !isValidUuid(values.ownerId.trim())) {
-    errors.ownerId = 'Owner ID phải là UUID hợp lệ.'
-  }
-
   if (!values.licensePlate?.trim()) {
     errors.licensePlate = 'The * field is required.'
   } else if (!/^[0-9A-Z-]{6,15}$/i.test(values.licensePlate.trim())) {
@@ -21,10 +17,6 @@ export function validateVehicleForm(values) {
 
   if (!values.type?.trim()) {
     errors.type = 'The * field is required.'
-  }
-
-  if (!values.brand?.trim()) {
-    errors.brand = 'The * field is required.'
   }
 
   return errors
