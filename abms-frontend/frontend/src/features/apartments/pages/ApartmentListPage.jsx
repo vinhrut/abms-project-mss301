@@ -6,17 +6,26 @@ import { extractApiErrorMessage } from '../../../utils/apiError.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 import { FeaturePlaceholderPage } from '../../shared/FeaturePlaceholderPage.jsx'
 
+function getBuildingIdFromToken(token) {
+  try {
+    const [, payload] = token.split('.')
+    return JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).buildingId || ''
+  } catch {
+    return ''
+  }
+}
+
+function getStatusClass(status) {
+  if (status === 'OCCUPIED' || status === 'ACTIVE') return 'badge badge-success'
+  if (status === 'VACANT' || status === 'AVAILABLE') return 'badge badge-warning'
+  return 'badge'
+}
+
 function formatDateRange(startDate, endDate) {
   if (!startDate) return '-'
   const start = new Date(startDate).toLocaleDateString('vi-VN')
   const end = endDate ? new Date(endDate).toLocaleDateString('vi-VN') : 'Vĩnh viễn'
   return `${start} - ${end}`
-}
-
-export function ApartmentListPage() {
-  if (status === 'OCCUPIED' || status === 'ACTIVE') return 'badge badge-success'
-  if (status === 'VACANT' || status === 'AVAILABLE') return 'badge badge-warning'
-  return 'badge'
 }
 
 export function ApartmentListPage() {
