@@ -385,7 +385,7 @@ public class ApartmentServiceImpl implements ApartmentService {
                 .build();
         contractRepository.save(newContract);
 
-        return mapContract(newContract);
+        return mapContract(newContract, authorizationHeader);
     }
 
     private com.abms.apartment.dto.ContractResponse mapContract(com.abms.apartment.entity.Contract contract, String authorizationHeader) {
