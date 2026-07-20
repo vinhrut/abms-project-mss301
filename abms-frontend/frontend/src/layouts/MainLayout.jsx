@@ -11,8 +11,8 @@ export function MainLayout() {
 
   const sections = getNavigationForRole(auth?.roleName)
   const activeItem = sections.flatMap((section) => section.items).find((item) => location.pathname.startsWith(item.to))
-  const pageTitle = activeItem?.label || 'Workspace'
-  const pageDescription = 'Khung điều hướng thống nhất cho hệ thống quản lý tòa nhà, sẵn sàng tích hợp thêm backend API theo từng service.'
+  const pageTitle = activeItem?.label || 'Không gian làm việc'
+  const pageDescription = 'Theo dõi và xử lý nghiệp vụ quản lý tòa nhà theo quyền truy cập hiện tại.'
 
   return (
     <div className="app-shell">

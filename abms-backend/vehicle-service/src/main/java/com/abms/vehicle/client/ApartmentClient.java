@@ -27,7 +27,7 @@ public class ApartmentClient {
     public ApartmentResponse getApartmentById(UUID apartmentId) {
         try {
             ResponseEntity<ApartmentResponse> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/apartments/" + apartmentId,
+                    apartmentServiceUrl + "/internal/apartments/" + apartmentId,
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {
@@ -44,7 +44,7 @@ public class ApartmentClient {
     public ApartmentResidentResponse getActiveResidenceByUserId(UUID userId) {
         try {
             ResponseEntity<ApartmentResidentResponse> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/apartments/residents/user/" + userId + "/active",
+                    apartmentServiceUrl + "/internal/apartments/residents/user/" + userId + "/active",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {
@@ -61,7 +61,7 @@ public class ApartmentClient {
     public List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId) {
         try {
             ResponseEntity<List<ApartmentResponse>> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/buildings/" + buildingId + "/apartments",
+                    apartmentServiceUrl + "/internal/buildings/" + buildingId + "/apartments",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {

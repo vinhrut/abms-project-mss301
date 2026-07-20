@@ -3,6 +3,7 @@ package com.abms.apartment.controller;
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
+import com.abms.apartment.repository.ApartmentResidentRepository;
 import com.abms.apartment.security.BuildingAccessService;
 import com.abms.apartment.service.ApartmentService;
 import jakarta.validation.Valid;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -27,6 +27,7 @@ public class ApartmentController {
 
     private final ApartmentService apartmentService;
     private final BuildingAccessService buildingAccessService;
+    private final ApartmentResidentRepository apartmentResidentRepository;
 
     @GetMapping
     public ResponseEntity<List<ApartmentResponse>> getApartments(
@@ -48,9 +49,12 @@ public class ApartmentController {
     @GetMapping("/{apartmentId}")
     public ResponseEntity<ApartmentResponse> getApartmentById(
             @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @PathVariable("apartmentId") UUID apartmentId) {
         ApartmentResponse apartment = apartmentService.getApartmentById(apartmentId);
-        buildingAccessService.ensureCanViewApartments(authorizationHeader, apartment.getBuildingId());
+        boolean activeResident = userId != null
+                && apartmentResidentRepository.existsByApartmentIdAndUserIdAndStatus(apartmentId, userId, "ACTIVE");
+        buildingAccessService.ensureCanViewApartmentDetail(authorizationHeader, apartmentId, apartment.getBuildingId(), activeResident);
         return ResponseEntity.ok(apartment);
     }
 
