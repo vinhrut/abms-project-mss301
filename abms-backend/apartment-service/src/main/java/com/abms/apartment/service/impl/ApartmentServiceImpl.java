@@ -16,7 +16,9 @@ import com.abms.apartment.repository.BuildingRepository;
 import com.abms.apartment.repository.ContractRepository;
 import com.abms.apartment.service.ApartmentService;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -360,5 +362,60 @@ public class ApartmentServiceImpl implements ApartmentService {
             return defaultValue;
         }
         return value.trim().toUpperCase();
+    }
+
+    @Override
+    public List<ApartmentResponse> getMyApartments(UUID userId) {
+        List<UUID> apartmentIds = apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
+                .stream()
+                .map(ApartmentResident::getApartmentId)
+                .distinct()
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, ApartmentResponse> apartmentsById = new LinkedHashMap<>();
+        apartmentRepository.findAllById(apartmentIds)
+                .stream()
+                .map(this::mapApartment)
+                .forEach(apartment -> apartmentsById.put(apartment.getApartmentId(), apartment));
+
+        return apartmentIds.stream()
+                .map(apartmentsById::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId) {
+        apartmentRepository.findById(apartmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId));
+
+        return apartmentResidentRepository.findByApartmentIdOrderByCreatedAtAsc(apartmentId)
+                .stream()
+                .map(this::mapResident)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId) {
+        buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        List<UUID> apartmentIds = apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
+                .stream()
+                .map(Apartment::getApartmentId)
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        return apartmentResidentRepository.findByApartmentIdInAndStatusOrderByCreatedAtAsc(apartmentIds, ACTIVE)
+                .stream()
+                .map(this::mapResident)
+                .toList();
     }
 }

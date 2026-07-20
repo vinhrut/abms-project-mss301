@@ -458,8 +458,8 @@ export function VehicleListPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="page-header-card">
+    <div className="page-stack vehicle-page">
+      <section className="page-header-card vehicle-page__header">
         <div>
           <span className="eyebrow">Quản lý phương tiện</span>
           <h1>{canManage ? 'Quản lý phương tiện' : 'Phương tiện của tôi'}</h1>
@@ -538,36 +538,20 @@ export function VehicleListPage() {
       ) : null}
 
       {isResident ? (
-        <section className="content-card">
+        <section className="content-card vehicle-register-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">2. Gửi yêu cầu</span>
-              <h2>{editingVehicleId ? 'Chỉnh sửa đơn đăng ký xe đang chờ duyệt' : 'Gửi đơn đăng ký xe / hủy đăng ký xe'}</h2>
+              <span className="eyebrow">Đăng ký phương tiện</span>
+              <h2>{editingVehicleId ? 'Chỉnh sửa đơn đăng ký xe' : 'Đăng ký phương tiện mới'}</h2>
               <p>
-                Dùng form bên dưới để gửi đơn đăng ký xe mới. Nếu muốn hủy xe đã được duyệt, bấm nút
-                “Gửi đơn hủy đăng ký” tại phần Xe hiện tại của tôi.
+                Vui lòng điền chính xác thông tin phương tiện để Ban Quản Lý phê duyệt.
               </p>
             </div>
           </div>
 
-          <div className="info-grid">
-            <article className="info-card">
-              <strong>Căn hộ của tôi</strong>
-              <p>{lookupLoading ? 'Đang tải...' : `${apartments.length} căn hộ`}</p>
-            </article>
-            <article className="info-card">
-              <strong>Đơn chờ duyệt</strong>
-              <p>{totalPending}</p>
-            </article>
-            <article className="info-card">
-              <strong>Có thể chỉnh sửa</strong>
-              <p>{hasPendingRequest ? 'Có đơn PENDING' : 'Không có đơn PENDING'}</p>
-            </article>
-          </div>
-
-          <form className="form-grid form-grid--two-columns" onSubmit={handleSubmitVehicleForm}>
-            <label className="form-field">
-              <span>Căn hộ *</span>
+          <form className="vehicle-register-form" onSubmit={handleSubmitVehicleForm}>
+            <label className="form-field vehicle-form-field">
+              <span>Chọn căn hộ</span>
               <select value={vehicleForm.apartmentId} onChange={(event) => updateVehicleForm('apartmentId', event.target.value)} disabled={lookupLoading}>
                 <option value="">{lookupLoading ? 'Đang tải căn hộ...' : 'Chọn căn hộ của bạn'}</option>
                 {apartments.map((apartment) => (
@@ -579,38 +563,49 @@ export function VehicleListPage() {
               {formErrors.apartmentId ? <small className="field-error">{formErrors.apartmentId}</small> : <small>Danh sách này lấy từ các căn hộ đang gắn với tài khoản của bạn.</small>}
             </label>
 
-            <article className="info-card">
-              <strong>Chủ xe</strong>
-              <p>{auth?.email || auth?.userId || 'Tài khoản hiện tại'}</p>
-            </article>
-
-            <label className="form-field">
-              <span>Biển số *</span>
+            <label className="form-field vehicle-form-field">
+              <span>Biển số xe</span>
               <input value={vehicleForm.licensePlate} onChange={(event) => updateVehicleForm('licensePlate', event.target.value)} placeholder="59A-12345" />
               {formErrors.licensePlate ? <small className="field-error">{formErrors.licensePlate}</small> : <small>Ví dụ: 59A-12345, 30G1-67890.</small>}
             </label>
 
-            <label className="form-field">
-              <span>Loại xe *</span>
-              <select value={vehicleForm.type} onChange={(event) => updateVehicleForm('type', event.target.value)}>
-                <option value="MOTORBIKE">Xe máy</option>
-                <option value="CAR">Ô tô</option>
-              </select>
+            <label className="form-field vehicle-form-field vehicle-form-field--full">
+              <span>Loại phương tiện</span>
+              <div className="vehicle-type-options">
+                <button
+                  type="button"
+                  className={`vehicle-type-option ${vehicleForm.type === 'MOTORBIKE' ? 'vehicle-type-option--active' : ''}`}
+                  onClick={() => updateVehicleForm('type', 'MOTORBIKE')}
+                >
+                  <span className="vehicle-radio-dot" />
+                  <span>🏍️</span>
+                  <strong>Xe máy</strong>
+                </button>
+                <button
+                  type="button"
+                  className={`vehicle-type-option ${vehicleForm.type === 'CAR' ? 'vehicle-type-option--active' : ''}`}
+                  onClick={() => updateVehicleForm('type', 'CAR')}
+                >
+                  <span className="vehicle-radio-dot" />
+                  <span>🚗</span>
+                  <strong>Ô tô</strong>
+                </button>
+              </div>
               {formErrors.type ? <small className="field-error">{formErrors.type}</small> : null}
             </label>
 
-            <label className="form-field form-field--full">
+            <label className="form-field vehicle-form-field vehicle-form-field--full">
               <span>Hãng / mẫu xe</span>
               <input value={vehicleForm.brand} onChange={(event) => updateVehicleForm('brand', event.target.value)} placeholder="Honda, Toyota..." />
               <small>Không bắt buộc. Có thể nhập hãng hoặc model xe để manager dễ nhận diện.</small>
             </label>
 
-            <div className="form-actions form-field--full">
+            <div className="vehicle-register-actions">
+              <button className="btn btn-ghost" type="button" onClick={resetVehicleForm}>
+                {editingVehicleId ? 'Hủy chỉnh sửa' : 'Hủy'}
+              </button>
               <button className="btn btn-primary" type="submit" disabled={formSubmitting || apartments.length === 0}>
                 {formSubmitting ? 'Đang lưu...' : editingVehicleId ? 'Lưu chỉnh sửa' : 'Gửi đơn đăng ký'}
-              </button>
-              <button className="btn btn-ghost" type="button" onClick={resetVehicleForm}>
-                {editingVehicleId ? 'Hủy chỉnh sửa' : 'Xóa form'}
               </button>
             </div>
           </form>
@@ -678,7 +673,19 @@ export function VehicleListPage() {
       ) : null}
 
       {!isResident ? (
-      <section className="content-card">
+      <section className="content-card vehicle-management-panel">
+        <div className="vehicle-management-header">
+          <div>
+            <span className="eyebrow">Vehicle management</span>
+            <h2>Quản lý phương tiện</h2>
+          </div>
+          {canManage ? (
+            <label className="vehicle-search-box">
+              <span>🔎</span>
+              <input value={filters.licensePlate} onChange={(event) => updateFilter('licensePlate', event.target.value)} placeholder="Tìm biển số/căn hộ..." />
+            </label>
+          ) : null}
+        </div>
         <div className="info-grid">
           <article className="info-card">
             <strong>{canManage ? 'Đơn chờ duyệt' : 'Tổng xe của tôi'}</strong>
@@ -691,7 +698,7 @@ export function VehicleListPage() {
         </div>
 
         {canManage ? (
-          <div className="toolbar-grid">
+          <div className="toolbar-grid vehicle-filter-bar">
             <label className="form-field">
               <span>Trạng thái</span>
               <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
@@ -711,7 +718,7 @@ export function VehicleListPage() {
                 <option value="CAR">Ô tô</option>
               </select>
             </label>
-            <label className="form-field">
+            <label className="form-field vehicle-filter-bar__hide-on-compact">
               <span>Biển số</span>
               <input value={filters.licensePlate} onChange={(event) => updateFilter('licensePlate', event.target.value)} placeholder="29A-12345" />
             </label>
@@ -759,8 +766,8 @@ export function VehicleListPage() {
         ) : null}
 
         {!loading && vehicles.length > 0 ? (
-          <div className="table-card">
-            <table className="data-table">
+          <div className="table-card vehicle-table-card">
+            <table className="data-table vehicle-management-table">
               <thead>
                 <tr>
                   <th>Căn hộ</th>
@@ -784,8 +791,8 @@ export function VehicleListPage() {
                     <td>
                       {canManage && vehicle.status === 'PENDING' ? (
                         <div className="table-actions">
-                          <button className="btn btn-success" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'APPROVED')}>Duyệt</button>
-                          <button className="btn btn-danger" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'REJECTED')}>Từ chối</button>
+                          <button className="vehicle-icon-btn vehicle-icon-btn--approve" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'APPROVED')} title="Duyệt">✓</button>
+                          <button className="vehicle-icon-btn vehicle-icon-btn--reject" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'REJECTED')} title="Từ chối">×</button>
                         </div>
                       ) : null}
                       {isResident && vehicle.status === 'PENDING' ? (

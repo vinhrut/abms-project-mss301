@@ -33,4 +33,14 @@ public class InternalApartmentController {
     public ResponseEntity<ApartmentResidentResponse> getActiveResidenceByUserId(@PathVariable("userId") UUID userId) {
         return ResponseEntity.ok(apartmentService.getActiveResidenceByUserId(userId));
     }
+
+    @GetMapping("/apartments/{apartmentId}/residents/{userId}/active")
+    public ResponseEntity<Void> checkActiveResidence(
+            @PathVariable("apartmentId") UUID apartmentId,
+            @PathVariable("userId") UUID userId) {
+        boolean exists = apartmentService.getMyApartments(userId)
+                .stream()
+                .anyMatch(apartment -> apartmentId.equals(apartment.getApartmentId()));
+        return exists ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
 }

@@ -58,6 +58,22 @@ public class ApartmentClient {
         }
     }
 
+    public boolean hasActiveResidence(UUID apartmentId, UUID userId) {
+        try {
+            restTemplate.exchange(
+                    apartmentServiceUrl + "/internal/apartments/" + apartmentId + "/residents/" + userId + "/active",
+                    HttpMethod.GET,
+                    null,
+                    Void.class);
+            return true;
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return false;
+            }
+            throw ex;
+        }
+    }
+
     public List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId) {
         try {
             ResponseEntity<List<ApartmentResponse>> response = restTemplate.exchange(
