@@ -36,4 +36,14 @@ export const maintenanceService = {
     const { data } = await apiClient.post(`/api/v1/maintenance-requests/${requestId}/complete`)
     return data
   },
+
+  async getRequestById(requestId) {
+    const { data } = await apiClient.get(`/api/v1/maintenance-requests/${requestId}`)
+    return data
+  },
+
+  async getHistory(requestId) {
+    const { data } = await apiClient.get(`/api/v1/maintenance-requests/${requestId}/history`)
+    return data
+  },
 }

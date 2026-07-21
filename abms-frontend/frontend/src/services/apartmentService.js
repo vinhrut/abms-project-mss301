@@ -15,6 +15,11 @@ export const apartmentService = {
     return data
   },
 
+  async getActiveResidenceByUserId(userId) {
+    const { data } = await apiClient.get(`/api/v1/apartments/residents/user/${userId}/active`)
+    return data
+   },
+
   async getMyApartments() {
     const { data } = await apiClient.get('/api/v1/apartments/my')
     return data

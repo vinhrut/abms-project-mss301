@@ -1,6 +1,7 @@
 package com.abms.maintenance.controller;
 
 import com.abms.maintenance.dto.AssignStaffRequest;
+import com.abms.maintenance.dto.MaintenanceHistoryResponse;
 import com.abms.maintenance.dto.MaintenanceRequestResponse;
 import com.abms.maintenance.dto.SubmitMaintenanceRequest;
 import com.abms.maintenance.service.MaintenanceService;
@@ -41,14 +42,17 @@ public class MaintenanceController {
             @RequestParam(required = false) String priority,
             @RequestParam(required = false) UUID apartmentId,
             @RequestParam(required = false) UUID senderId,
-            @RequestParam(required = false) UUID technicianId) {
+            @RequestParam(required = false) UUID technicianId,
+            @RequestHeader(value = "X-Building-Id", required = false) String buildingIdHeader,
+            @RequestHeader(value = "X-User-Role", required = false) String roleHeader) {
         if (senderId != null) {
             return ResponseEntity.ok(maintenanceService.listBySender(senderId));
         }
         if (technicianId != null) {
             return ResponseEntity.ok(maintenanceService.listByTechnician(technicianId));
         }
-        return ResponseEntity.ok(maintenanceService.listRequests(status, priority, apartmentId));
+        return ResponseEntity.ok(maintenanceService.listRequests(
+                status, priority, apartmentId, parseUuid(buildingIdHeader), roleHeader));
     }
 
     @GetMapping("/mine")
@@ -82,6 +86,11 @@ public class MaintenanceController {
     @GetMapping("/{requestId}")
     public ResponseEntity<MaintenanceRequestResponse> getById(@PathVariable UUID requestId) {
         return ResponseEntity.ok(maintenanceService.getById(requestId));
+    }
+
+    @GetMapping("/{requestId}/history")
+    public ResponseEntity<List<MaintenanceHistoryResponse>> getHistory(@PathVariable UUID requestId) {
+        return ResponseEntity.ok(maintenanceService.getHistoryByRequestId(requestId));
     }
 
     @PostMapping("/{requestId}/assign")

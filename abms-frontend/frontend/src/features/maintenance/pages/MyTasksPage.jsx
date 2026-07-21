@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { maintenanceService } from '../../../services/maintenanceService.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'
-import { APP_ROUTES } from '../../../config/navigation.js'
+import { APP_ROUTES, getMaintenanceDetailRoute } from '../../../config/navigation.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 
 const statusClassMap = {
@@ -114,7 +114,9 @@ export function MyTasksPage() {
               <tbody>
                 {filteredTasks.map((task) => (
                   <tr key={task.requestId}>
-                    <td>{task.requestCode}</td>
+                    <td>
+                      <Link to={getMaintenanceDetailRoute(task.requestId)}>{task.requestCode}</Link>
+                    </td>
                     <td>
                       <strong>{task.title}</strong>
                       {task.description ? <p className="muted-text">{task.description}</p> : null}

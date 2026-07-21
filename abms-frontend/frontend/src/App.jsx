@@ -18,7 +18,7 @@ import { ChangePasswordPage } from './features/profile/pages/ChangePasswordPage.
 import { ProfilePage } from './features/profile/pages/ProfilePage.jsx'
 import { HomePage } from './features/home/pages/HomePage.jsx'
 import { MaintenanceListPage } from './features/maintenance/pages/MaintenanceListPage.jsx'
-import { MaintenanceSubmitPage } from './features/maintenance/pages/MaintenanceSubmitPage.jsx'
+import { MaintenanceDetailPage } from './features/maintenance/pages/MaintenanceDetailPage.jsx'
 import { MyTasksPage } from './features/maintenance/pages/MyTasksPage.jsx'
 import { NotificationListPage } from './features/notifications/pages/NotificationListPage.jsx'
 import { ReportListPage } from './features/reports/pages/ReportListPage.jsx'
@@ -54,7 +54,8 @@ function App() {
           <Route path={APP_ROUTES.payments} element={<PaymentListPage />} />
           <Route path={APP_ROUTES.vnpayResult} element={<VnPayResultPage />} />
           <Route path={APP_ROUTES.maintenance} element={<MaintenanceListPage />} />
-          <Route path={APP_ROUTES.maintenanceSubmit} element={<MaintenanceSubmitPage />} />
+          <Route path="/app/maintenance/:requestId" element={<MaintenanceDetailPage />} />
+          <Route path={APP_ROUTES.maintenanceSubmit} element={<Navigate to={`${APP_ROUTES.maintenance}?submit=1`} replace />} />
           <Route path={APP_ROUTES.maintenanceTasks} element={<MyTasksPage />} />
           <Route path={APP_ROUTES.vehicles} element={<VehicleListPage />} />
           <Route path={APP_ROUTES.vehicleRegister} element={<VehicleRegisterPage />} />

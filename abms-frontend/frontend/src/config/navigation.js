@@ -18,12 +18,17 @@ export const APP_ROUTES = {
   vnpayResult: '/app/payments/vnpay-result',
   maintenance: '/app/maintenance',
   maintenanceSubmit: '/app/maintenance/submit',
+  maintenanceDetail: '/app/maintenance/:requestId',
   maintenanceTasks: '/app/maintenance/my-tasks',
   vehicles: '/app/vehicles',
   vehicleRegister: '/app/vehicles/register',
   notifications: '/app/notifications',
   reports: '/app/reports',
   jobs: '/app/system/jobs',
+}
+
+export function getMaintenanceDetailRoute(requestId) {
+  return `/app/maintenance/${requestId}`
 }
 
 export function getDefaultPrivateRoute(roleName) {
@@ -63,7 +68,6 @@ export const navigationSections = [
       { label: 'Invoices', to: APP_ROUTES.invoices, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'Payments', to: APP_ROUTES.payments, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'Maintenance', to: APP_ROUTES.maintenance, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.TECHNICIAN, ROLE_KEYS.RESIDENT] },
-      { label: 'Submit Request', to: APP_ROUTES.maintenanceSubmit, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'My Tasks', to: APP_ROUTES.maintenanceTasks, roles: [ROLE_KEYS.TECHNICIAN] },
       { label: 'Vehicles', to: APP_ROUTES.vehicles, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
     ],
