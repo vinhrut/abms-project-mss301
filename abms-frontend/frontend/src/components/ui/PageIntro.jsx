@@ -3,9 +3,9 @@ export function PageIntro({ eyebrow, title, description, actions }) {
     <section className="page-header-card">
       <div className="page-header-split">
         <div>
-          <span className="eyebrow">{eyebrow}</span>
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
           <h1>{title}</h1>
-          <p>{description}</p>
+          {description ? <p>{description}</p> : null}
         </div>
         {actions ? <div className="hero-panel__actions">{actions}</div> : null}
       </div>

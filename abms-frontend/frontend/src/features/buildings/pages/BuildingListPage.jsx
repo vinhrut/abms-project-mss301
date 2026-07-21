@@ -127,13 +127,6 @@ export function BuildingListPage() {
     )
   }, [rows, search])
 
-  const summary = useMemo(() => {
-    const totalBuildings = rows.length
-    const activeApartments = rows.reduce((sum, row) => sum + (row.activeApartments || 0), 0)
-    const residents = rows.reduce((sum, row) => sum + (row.residentCount || 0), 0)
-    return { totalBuildings, activeApartments, residents }
-  }, [rows])
-
   const openEdit = (row) => {
     setForm({
       name: row.name === '-' ? '' : row.name,
@@ -229,21 +222,6 @@ export function BuildingListPage() {
       />
 
       <section className="content-card">
-        <div className="building-summary-grid">
-          <article className="info-card building-summary-card">
-            <strong>Tổng tòa nhà</strong>
-            <p className="building-summary-value">{summary.totalBuildings}</p>
-          </article>
-          <article className="info-card building-summary-card">
-            <strong>Căn hộ đang hoạt động</strong>
-            <p className="building-summary-value">{summary.activeApartments}</p>
-          </article>
-          <article className="info-card building-summary-card">
-            <strong>Cư dân</strong>
-            <p className="building-summary-value">{summary.residents}</p>
-          </article>
-        </div>
-
         <div className="building-toolbar">
           <label className="building-search">
             <span className="visually-hidden">Search</span>

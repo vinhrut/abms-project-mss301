@@ -1,9 +1,12 @@
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../../features/auth/context/useAuth.js'
 
 export function AppSidebar({ sections }) {
+  const { defaultPrivateRoute } = useAuth()
+
   return (
     <aside className="app-sidebar">
-      <Link to="/app/dashboard" className="brand-mark">
+      <Link to={defaultPrivateRoute} className="brand-mark">
         <span>AB</span>
         <div>
           <strong>ABMS</strong>

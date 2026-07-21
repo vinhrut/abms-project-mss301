@@ -30,11 +30,19 @@ export const APP_ROUTES = {
 export function getDefaultPrivateRoute(roleName) {
   const normalizedRole = normalizeRole(roleName)
 
+  if (normalizedRole === ROLE_KEYS.ADMIN || normalizedRole === ROLE_KEYS.MANAGER) {
+    return APP_ROUTES.dashboard
+  }
+
   if (normalizedRole === ROLE_KEYS.TECHNICIAN) {
     return APP_ROUTES.maintenanceTasks
   }
 
-  return APP_ROUTES.dashboard
+  if (normalizedRole === ROLE_KEYS.STAFF) {
+    return APP_ROUTES.apartments
+  }
+
+  return APP_ROUTES.invoices
 }
 
 export const navigationSections = [
@@ -42,7 +50,7 @@ export const navigationSections = [
     id: 'overview',
     title: 'Overview',
     items: [
-      { label: 'Dashboard', to: APP_ROUTES.dashboard, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.TECHNICIAN, ROLE_KEYS.RESIDENT] },
+      { label: 'Dashboard', to: APP_ROUTES.dashboard, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER] },
     ],
   },
   {
