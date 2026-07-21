@@ -4,6 +4,8 @@ import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -28,4 +30,24 @@ public interface ApartmentService {
     ApartmentResidentResponse rejectResidentRegistration(UUID userId);
 
     ApartmentResidentResponse getActiveResidenceByUserId(UUID userId);
+
+    List<ApartmentResponse> getMyApartments(UUID userId);
+
+    List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId);
+
+    List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId);
+
+    @Transactional
+    ApartmentResidentResponse renewResidentContract(String authorizationHeader, UUID apartmentId, UUID userId);
+
+    @Transactional
+    ApartmentResidentResponse removeResidentFromApartment(String authorizationHeader, UUID apartmentId, UUID userId);
+
+    // --- contracts listing and management ---
+    List<com.abms.apartment.dto.ContractResponse> listContracts(String authorizationHeader, UUID buildingId);
+
+    com.abms.apartment.dto.ContractResponse getContractById(String authorizationHeader, UUID contractId);
+
+    @Transactional
+    com.abms.apartment.dto.ContractResponse renewContract(String authorizationHeader, UUID contractId, com.abms.apartment.dto.RenewContractRequest request);
 }

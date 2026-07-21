@@ -1,6 +1,7 @@
 package com.abms.maintenance.service;
 
 import com.abms.maintenance.dto.AssignStaffRequest;
+import com.abms.maintenance.dto.MaintenanceHistoryResponse;
 import com.abms.maintenance.dto.MaintenanceRequestResponse;
 import com.abms.maintenance.dto.SubmitMaintenanceRequest;
 import java.util.List;
@@ -17,6 +18,8 @@ public interface MaintenanceService {
     List<MaintenanceRequestResponse> listByTechnician(UUID technicianId);
 
     MaintenanceRequestResponse getById(UUID requestId);
+
+    List<MaintenanceHistoryResponse> getHistoryByRequestId(UUID requestId);
 
     MaintenanceRequestResponse assignStaff(UUID requestId, AssignStaffRequest request, UUID actorUserId);
 

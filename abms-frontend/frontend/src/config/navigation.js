@@ -18,12 +18,17 @@ export const APP_ROUTES = {
   vnpayResult: '/app/payments/vnpay-result',
   maintenance: '/app/maintenance',
   maintenanceSubmit: '/app/maintenance/submit',
+  maintenanceDetail: '/app/maintenance/:requestId',
   maintenanceTasks: '/app/maintenance/my-tasks',
   vehicles: '/app/vehicles',
   vehicleRegister: '/app/vehicles/register',
   notifications: '/app/notifications',
   reports: '/app/reports',
   jobs: '/app/system/jobs',
+}
+
+export function getMaintenanceDetailRoute(requestId) {
+  return `/app/maintenance/${requestId}`
 }
 
 export function getDefaultPrivateRoute(roleName) {

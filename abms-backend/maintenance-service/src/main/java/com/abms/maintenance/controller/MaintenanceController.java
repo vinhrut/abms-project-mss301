@@ -1,6 +1,7 @@
 package com.abms.maintenance.controller;
 
 import com.abms.maintenance.dto.AssignStaffRequest;
+import com.abms.maintenance.dto.MaintenanceHistoryResponse;
 import com.abms.maintenance.dto.MaintenanceRequestResponse;
 import com.abms.maintenance.dto.SubmitMaintenanceRequest;
 import com.abms.maintenance.service.MaintenanceService;
@@ -82,6 +83,11 @@ public class MaintenanceController {
     @GetMapping("/{requestId}")
     public ResponseEntity<MaintenanceRequestResponse> getById(@PathVariable UUID requestId) {
         return ResponseEntity.ok(maintenanceService.getById(requestId));
+    }
+
+    @GetMapping("/{requestId}/history")
+    public ResponseEntity<List<MaintenanceHistoryResponse>> getHistory(@PathVariable UUID requestId) {
+        return ResponseEntity.ok(maintenanceService.getHistoryByRequestId(requestId));
     }
 
     @PostMapping("/{requestId}/assign")

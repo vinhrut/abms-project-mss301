@@ -5,6 +5,7 @@ import com.abms.maintenance.constant.MaintenancePriority;
 import com.abms.maintenance.constant.MaintenanceStatus;
 import com.abms.maintenance.dto.ApartmentResidentResponse;
 import com.abms.maintenance.dto.AssignStaffRequest;
+import com.abms.maintenance.dto.MaintenanceHistoryResponse;
 import com.abms.maintenance.dto.MaintenanceRequestResponse;
 import com.abms.maintenance.dto.SubmitMaintenanceRequest;
 import com.abms.maintenance.entity.MaintenanceHistory;
@@ -66,7 +67,6 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         validatePriority(priority);
 
         UUID apartmentId = resolveApartmentIdForResident(senderId, actorEmail);
-        apartmentClient.getApartmentById(apartmentId);
 
         long openCount = maintenanceRequestRepository.countBySenderIdAndStatusIn(senderId, OPEN_STATUSES);
         if (openCount >= MAX_OPEN_REQUESTS) {
@@ -152,6 +152,15 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     @Transactional(readOnly = true)
     public MaintenanceRequestResponse getById(UUID requestId) {
         return mapToResponse(getOrThrow(requestId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MaintenanceHistoryResponse> getHistoryByRequestId(UUID requestId) {
+        getOrThrow(requestId);
+        return maintenanceHistoryRepository.findByRequestIdOrderByChangedAtDesc(requestId).stream()
+                .map(this::mapHistoryToResponse)
+                .toList();
     }
 
     @Override
@@ -257,6 +266,18 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .createdAt(entity.getCreatedAt())
                 .assignedAt(entity.getAssignedAt())
                 .resolvedAt(entity.getResolvedAt())
+                .build();
+    }
+
+    private MaintenanceHistoryResponse mapHistoryToResponse(MaintenanceHistory entity) {
+        return MaintenanceHistoryResponse.builder()
+                .historyId(entity.getHistoryId())
+                .requestId(entity.getRequestId())
+                .fromStatus(entity.getFromStatus())
+                .toStatus(entity.getToStatus())
+                .changedBy(entity.getChangedBy())
+                .note(entity.getNote())
+                .changedAt(entity.getChangedAt())
                 .build();
     }
 }

@@ -96,14 +96,14 @@ public class ApartmentServiceImpl implements ApartmentService {
         apartmentResident.setRejectedAt(null);
         apartmentResident.setApprovedAt(null);
 
-        return mapResident(apartmentResidentRepository.save(apartmentResident));
+        return mapResident(apartmentResidentRepository.save(apartmentResident), null);
     }
 
     @Override
     public List<ApartmentResidentResponse> getPendingResidentRegistrations() {
         return apartmentResidentRepository.findByStatusOrderByCreatedAtAsc(PENDING_APPROVAL)
                 .stream()
-                .map(this::mapResident)
+                .map(resident -> mapResident(resident, null))
                 .toList();
     }
 
@@ -116,7 +116,7 @@ public class ApartmentServiceImpl implements ApartmentService {
         apartmentResident.setStatus(ACTIVE);
         apartmentResident.setApprovedAt(LocalDateTime.now());
         apartmentResident.setRejectedAt(null);
-        return mapResident(apartmentResidentRepository.save(apartmentResident));
+        return mapResident(apartmentResidentRepository.save(apartmentResident), null);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class ApartmentServiceImpl implements ApartmentService {
         apartmentResident.setStatus(REJECTED);
         apartmentResident.setRejectedAt(LocalDateTime.now());
         apartmentResident.setApprovedAt(null);
-        return mapResident(apartmentResidentRepository.save(apartmentResident));
+        return mapResident(apartmentResidentRepository.save(apartmentResident), null);
     }
 
     @Override
@@ -136,7 +136,51 @@ public class ApartmentServiceImpl implements ApartmentService {
         ApartmentResident apartmentResident = apartmentResidentRepository
                 .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Active residence not found for user: " + userId));
-        return mapResident(apartmentResident);
+        return mapResident(apartmentResident, null);
+    }
+
+    @Override
+    public List<ApartmentResponse> getMyApartments(UUID userId) {
+        return apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
+                .stream()
+                .map(ApartmentResident::getApartmentId)
+                .distinct()
+                .map(apartmentId -> apartmentRepository.findById(apartmentId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId)))
+                .map(this::mapApartment)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId) {
+        apartmentRepository.findById(apartmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId));
+
+        return apartmentResidentRepository.findByApartmentIdOrderByCreatedAtAsc(apartmentId)
+                .stream()
+                .map(resident -> mapResident(resident, authorizationHeader))
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId) {
+        buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        List<UUID> apartmentIds = apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
+                .stream()
+                .map(Apartment::getApartmentId)
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        return apartmentResidentRepository
+                .findByApartmentIdInAndStatusOrderByCreatedAtAsc(apartmentIds, ACTIVE)
+                .stream()
+                .map(resident -> mapResident(resident, authorizationHeader))
+                .toList();
     }
 
     private ApartmentResponse mapApartment(Apartment apartment) {
@@ -160,6 +204,10 @@ public class ApartmentServiceImpl implements ApartmentService {
     }
 
     private ApartmentResidentResponse mapResident(ApartmentResident apartmentResident) {
+        return mapResident(apartmentResident, null);
+    }
+
+    private ApartmentResidentResponse mapResident(ApartmentResident apartmentResident, String authorizationHeader) {
         var builder = ApartmentResidentResponse.builder()
                 .residentId(apartmentResident.getResidentId())
                 .apartmentId(apartmentResident.getApartmentId())
@@ -188,11 +236,27 @@ public class ApartmentServiceImpl implements ApartmentService {
             // ignore contract lookup failures
         }
 
+        if (authorizationHeader != null && !authorizationHeader.isBlank()) {
+            try {
+                UserResponse user = authFeignClient.getUserById(
+                        apartmentResident.getUserId().toString(), authorizationHeader);
+                if (user != null) {
+                    builder.userFullName(user.getFullName())
+                            .userEmail(user.getEmail())
+                            .userPhone(user.getPhone())
+                            .userIdCard(user.getIdCard())
+                            .userRoleName(user.getRoleName());
+                }
+            } catch (RuntimeException ignored) {
+                // ignore auth enrichment failures
+            }
+        }
+
         return builder.build();
     }
 
-    @Override
     @Transactional
+    @Override
     public ApartmentResidentResponse renewResidentContract(String authorizationHeader, UUID apartmentId, UUID userId) {
         // ensure apartment exists
         apartmentRepository.findById(apartmentId)
@@ -213,7 +277,7 @@ public class ApartmentServiceImpl implements ApartmentService {
             contract.setEndDate(newEnd);
             contractRepository.save(contract);
             // return updated resident response
-            return mapResident(resident);
+            return mapResident(resident, authorizationHeader);
         } else {
             // create a new temporary contract for 1 month
             var newContract = com.abms.apartment.entity.Contract.builder()
@@ -227,12 +291,12 @@ public class ApartmentServiceImpl implements ApartmentService {
                     .status(ACTIVE)
                     .build();
             contractRepository.save(newContract);
-            return mapResident(resident);
+            return mapResident(resident, authorizationHeader);
         }
     }
 
-    @Override
     @Transactional
+    @Override
     public ApartmentResidentResponse removeResidentFromApartment(String authorizationHeader, UUID apartmentId, UUID userId) {
         // ensure apartment exists
         apartmentRepository.findById(apartmentId)
@@ -253,7 +317,7 @@ public class ApartmentServiceImpl implements ApartmentService {
             contractRepository.save(c);
         });
 
-        return mapResident(resident);
+        return mapResident(resident, authorizationHeader);
     }
 
     // --- contracts listing and management ---
@@ -283,8 +347,8 @@ public class ApartmentServiceImpl implements ApartmentService {
         return mapContract(c, authorizationHeader);
     }
 
-    @Override
     @Transactional
+    @Override
     public com.abms.apartment.dto.ContractResponse renewContract(String authorizationHeader, java.util.UUID contractId, com.abms.apartment.dto.RenewContractRequest request) {
         var oldOpt = contractRepository.findById(contractId);
         if (oldOpt.isEmpty()) throw new ResourceNotFoundException("Contract not found: " + contractId);

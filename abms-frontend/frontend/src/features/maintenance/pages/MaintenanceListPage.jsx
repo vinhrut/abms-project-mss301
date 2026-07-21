@@ -1,17 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { apartmentService } from '../../../services/apartmentService.js'
 import { maintenanceService } from '../../../services/maintenanceService.js'
 import { userService } from '../../../services/userService.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'
-import { APP_ROUTES } from '../../../config/navigation.js'
+import { APP_ROUTES, getMaintenanceDetailRoute } from '../../../config/navigation.js'
 import { ROLE_KEYS, normalizeRole } from '../../../config/roles.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 
-const statusClassMap = {
-  OPEN: 'badge badge-warning',
-  IN_PROGRESS: 'badge badge-info',
-  RESOLVED: 'badge badge-success',
-  CANCELLED: 'badge badge-danger',
+const categoryLabels = {
+  PLUMBING: 'Plumbing',
+  ELECTRICAL: 'Electrical',
+  HVAC: 'HVAC',
+  CIVIL: 'Civil',
+  OTHER: 'Other',
+}
+
+function formatStatusLabel(status) {
+  if (status === 'IN_PROGRESS') return 'IN PROGRESS'
+  if (status === 'CANCELLED') return 'CLOSED'
+  return status || '—'
+}
+
+function statusBadgeClass(status) {
+  if (status === 'IN_PROGRESS') return 'maint-status maint-status-progress'
+  if (status === 'OPEN') return 'maint-status maint-status-open'
+  if (status === 'RESOLVED') return 'maint-status maint-status-resolved'
+  if (status === 'CANCELLED') return 'maint-status maint-status-closed'
+  return 'maint-status'
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = String(date.getFullYear()).slice(-2)
+  return `${day}/${month}/${year}`
 }
 
 export function MaintenanceListPage() {
@@ -22,6 +48,7 @@ export function MaintenanceListPage() {
   const isTechnician = role === ROLE_KEYS.TECHNICIAN
 
   const [requests, setRequests] = useState([])
+  const [apartmentMap, setApartmentMap] = useState({})
   const [technicians, setTechnicians] = useState([])
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
@@ -63,6 +90,25 @@ export function MaintenanceListPage() {
   }, [auth?.userId, isResident, isTechnician, statusFilter, priorityFilter])
 
   useEffect(() => {
+    const loadApartments = async () => {
+      try {
+        const apartments = auth?.buildingId
+          ? await apartmentService.getApartmentsByBuildingId(auth.buildingId)
+          : await apartmentService.getAllApartments()
+        const map = {}
+        ;(Array.isArray(apartments) ? apartments : []).forEach((apartment) => {
+          map[apartment.apartmentId] = apartment.roomNumber || apartment.apartmentId
+        })
+        setApartmentMap(map)
+      } catch {
+        setApartmentMap({})
+      }
+    }
+
+    loadApartments()
+  }, [auth?.buildingId])
+
+  useEffect(() => {
     if (!canAssign) {
       return
     }
@@ -91,10 +137,10 @@ export function MaintenanceListPage() {
     return requests.filter((item) => {
       const code = item.requestCode?.toLowerCase() || ''
       const title = item.title?.toLowerCase() || ''
-      const apartmentId = item.apartmentId?.toLowerCase() || ''
-      return code.includes(normalized) || title.includes(normalized) || apartmentId.includes(normalized)
+      const room = (apartmentMap[item.apartmentId] || item.apartmentId || '').toLowerCase()
+      return code.includes(normalized) || title.includes(normalized) || room.includes(normalized)
     })
-  }, [requests, searchTerm])
+  }, [requests, searchTerm, apartmentMap])
 
   const handleAssign = async (requestId) => {
     const technicianId = assignSelections[requestId]
@@ -124,11 +170,11 @@ export function MaintenanceListPage() {
               ? 'Yêu cầu bảo trì của tôi'
               : isTechnician
                 ? 'Công việc được giao'
-                : 'Danh sách yêu cầu bảo trì'}
+                : 'Maintenance Requests'}
           </h1>
           <p>
             {canAssign
-              ? 'Xem toàn bộ ticket, lọc theo trạng thái/ưu tiên và phân công kỹ thuật viên.'
+              ? 'Danh sách yêu cầu bảo trì theo mã, căn hộ, ưu tiên và trạng thái.'
               : isResident
                 ? 'Theo dõi các yêu cầu bạn đã gửi và tạo yêu cầu mới khi cần.'
                 : 'Xem các ticket đang được giao cho bạn.'}
@@ -150,9 +196,9 @@ export function MaintenanceListPage() {
                 <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                   <option value="">All</option>
                   <option value="OPEN">OPEN</option>
-                  <option value="IN_PROGRESS">IN_PROGRESS</option>
+                  <option value="IN_PROGRESS">IN PROGRESS</option>
                   <option value="RESOLVED">RESOLVED</option>
-                  <option value="CANCELLED">CANCELLED</option>
+                  <option value="CANCELLED">CLOSED</option>
                 </select>
               </label>
               <label className="form-field">
@@ -169,7 +215,7 @@ export function MaintenanceListPage() {
           <label className="form-field">
             <span>Search</span>
             <input
-              placeholder="Tìm theo mã, tiêu đề hoặc apartment"
+              placeholder="Search by code, apartment or title"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
@@ -177,7 +223,7 @@ export function MaintenanceListPage() {
 
           <div className="toolbar-actions">
             <button type="button" className="btn btn-primary" onClick={loadRequests}>
-              Làm mới
+              Refresh
             </button>
           </div>
         </div>
@@ -192,67 +238,83 @@ export function MaintenanceListPage() {
 
         {!loading && filteredRequests.length > 0 ? (
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table maint-table">
               <thead>
                 <tr>
-                  <th>Mã</th>
-                  <th>Tiêu đề</th>
-                  <th>Hạng mục</th>
-                  <th>Ưu tiên</th>
-                  <th>Trạng thái</th>
-                  <th>Apartment</th>
-                  {canAssign ? <th>Phân công</th> : null}
+                  <th>CODE</th>
+                  <th>APARTMENT</th>
+                  <th>TITLE</th>
+                  <th>CATEGORY</th>
+                  <th>PRIORITY</th>
+                  <th>STATUS</th>
+                  <th>DATE</th>
+                  {canAssign ? <th>ASSIGN</th> : null}
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((item) => (
-                  <tr key={item.requestId}>
-                    <td>{item.requestCode}</td>
-                    <td>
-                      <strong>{item.title}</strong>
-                      {item.description ? <p className="muted-text">{item.description}</p> : null}
-                    </td>
-                    <td>{item.category}</td>
-                    <td>{item.priority}</td>
-                    <td>
-                      <span className={statusClassMap[item.status] || 'badge'}>{item.status}</span>
-                    </td>
-                    <td className="mono-text">{item.apartmentId}</td>
-                    {canAssign ? (
+                {filteredRequests.map((item) => {
+                  const isEmergency = item.priority === 'EMERGENCY'
+                  const roomLabel = apartmentMap[item.apartmentId] || '—'
+
+                  return (
+                    <tr key={item.requestId}>
+                      <td className="maint-code">
+                        <Link to={getMaintenanceDetailRoute(item.requestId)}>{item.requestCode}</Link>
+                      </td>
+                      <td className="maint-apartment">{roomLabel}</td>
+                      <td className="maint-title">{item.title}</td>
+                      <td>{categoryLabels[item.category] || item.category}</td>
                       <td>
-                        {item.status === 'OPEN' || item.status === 'IN_PROGRESS' ? (
-                          <div className="inline-actions">
-                            <select
-                              value={assignSelections[item.requestId] || item.technicianId || ''}
-                              onChange={(event) =>
-                                setAssignSelections((prev) => ({
-                                  ...prev,
-                                  [item.requestId]: event.target.value,
-                                }))
-                              }
-                            >
-                              <option value="">Chọn technician</option>
-                              {technicians.map((tech) => (
-                                <option key={tech.userId} value={tech.userId}>
-                                  {tech.fullName || tech.email}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleAssign(item.requestId)}
-                            >
-                              Assign
-                            </button>
-                          </div>
+                        {isEmergency ? (
+                          <span className="maint-priority-emergency">
+                            <span aria-hidden="true">⚠</span> Emergency
+                          </span>
                         ) : (
-                          <span className="muted-text">{item.technicianId || '—'}</span>
+                          <span>Normal</span>
                         )}
                       </td>
-                    ) : null}
-                  </tr>
-                ))}
+                      <td>
+                        <span className={statusBadgeClass(item.status)}>
+                          {formatStatusLabel(item.status)}
+                        </span>
+                      </td>
+                      <td>{formatDate(item.createdAt)}</td>
+                      {canAssign ? (
+                        <td>
+                          {item.status === 'OPEN' || item.status === 'IN_PROGRESS' ? (
+                            <div className="inline-actions">
+                              <select
+                                value={assignSelections[item.requestId] || item.technicianId || ''}
+                                onChange={(event) =>
+                                  setAssignSelections((prev) => ({
+                                    ...prev,
+                                    [item.requestId]: event.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="">Technician</option>
+                                {technicians.map((tech) => (
+                                  <option key={tech.userId} value={tech.userId}>
+                                    {tech.fullName || tech.email}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => handleAssign(item.requestId)}
+                              >
+                                Assign
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="muted-text">—</span>
+                          )}
+                        </td>
+                      ) : null}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

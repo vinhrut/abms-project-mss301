@@ -66,7 +66,8 @@ public class DataInitializer implements CommandLineRunner {
                 resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee2", APARTMENT_A102, RESIDENT_A102, "TENANT", "TEMPORARY", 8),
                 resident("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee3", APARTMENT_B101, RESIDENT_B101, "OWNER", "PERMANENT", 6));
 
-        residents.forEach(apartmentResidentRepository::save);
+        cleanupResidents(residents);
+        residents.forEach(this::upsertResident);
     }
 
     private void cleanupBuildings(List<Building> seedBuildings) {
@@ -87,6 +88,40 @@ public class DataInitializer implements CommandLineRunner {
                 .forEach(apartmentRepository::delete);
     }
 
+    private void cleanupResidents(List<ApartmentResident> seedResidents) {
+        Set<UUID> allowedResidentIds = new HashSet<>();
+        Set<UUID> seedUserIds = new HashSet<>();
+        seedResidents.forEach(seed -> {
+            allowedResidentIds.add(seed.getResidentId());
+            seedUserIds.add(seed.getUserId());
+        });
+
+        apartmentResidentRepository.findAll().stream()
+                .filter(existing -> !allowedResidentIds.contains(existing.getResidentId())
+                        || (seedUserIds.contains(existing.getUserId())
+                                && !allowedResidentIds.contains(existing.getResidentId())))
+                .forEach(apartmentResidentRepository::delete);
+
+        // Remove leftover rows that keep seed userIds but wrong residentId (old data).
+        apartmentResidentRepository.findAll().stream()
+                .filter(existing -> seedUserIds.contains(existing.getUserId())
+                        && !allowedResidentIds.contains(existing.getResidentId()))
+                .forEach(apartmentResidentRepository::delete);
+    }
+
+    private void upsertResident(ApartmentResident seed) {
+        apartmentResidentRepository.findById(seed.getResidentId()).ifPresentOrElse(existing -> {
+            existing.setApartmentId(seed.getApartmentId());
+            existing.setUserId(seed.getUserId());
+            existing.setRelationship(seed.getRelationship());
+            existing.setResidenceType(seed.getResidenceType());
+            existing.setStatus(seed.getStatus());
+            existing.setApprovedAt(seed.getApprovedAt());
+            existing.setRejectedAt(null);
+            apartmentResidentRepository.save(existing);
+        }, () -> apartmentResidentRepository.save(seed));
+    }
+
     private Apartment apartment(String apartmentId, UUID buildingId, String roomNumber, int floor, String area, String status) {
         return Apartment.builder()
                 .apartmentId(UUID.fromString(apartmentId))
@@ -98,7 +133,13 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
     }
 
-    private ApartmentResident resident(String residentId, String apartmentId, String userId, String relationship, String residenceType, int createdDaysAgo) {
+    private ApartmentResident resident(
+            String residentId,
+            String apartmentId,
+            String userId,
+            String relationship,
+            String residenceType,
+            int createdDaysAgo) {
         LocalDateTime createdAt = LocalDateTime.now().minusDays(createdDaysAgo);
         return ApartmentResident.builder()
                 .residentId(UUID.fromString(residentId))
