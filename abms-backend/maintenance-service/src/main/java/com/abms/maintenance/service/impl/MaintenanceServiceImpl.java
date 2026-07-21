@@ -4,7 +4,9 @@ import com.abms.maintenance.client.ApartmentClient;
 import com.abms.maintenance.constant.MaintenancePriority;
 import com.abms.maintenance.constant.MaintenanceStatus;
 import com.abms.maintenance.dto.ApartmentResidentResponse;
+import com.abms.maintenance.dto.ApartmentResponse;
 import com.abms.maintenance.dto.AssignStaffRequest;
+import com.abms.maintenance.dto.MaintenanceHistoryResponse;
 import com.abms.maintenance.dto.MaintenanceRequestResponse;
 import com.abms.maintenance.dto.SubmitMaintenanceRequest;
 import com.abms.maintenance.entity.MaintenanceHistory;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +69,6 @@ public class MaintenanceServiceImpl implements MaintenanceService {
         validatePriority(priority);
 
         UUID apartmentId = resolveApartmentIdForResident(senderId, actorEmail);
-        apartmentClient.getApartmentById(apartmentId);
 
         long openCount = maintenanceRequestRepository.countBySenderIdAndStatusIn(senderId, OPEN_STATUSES);
         if (openCount >= MAX_OPEN_REQUESTS) {
@@ -121,15 +123,48 @@ public class MaintenanceServiceImpl implements MaintenanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MaintenanceRequestResponse> listRequests(String status, String priority, UUID apartmentId) {
+    public List<MaintenanceRequestResponse> listRequests(
+            String status, String priority, UUID apartmentId, UUID buildingId, String roleName) {
+        Set<UUID> allowedApartmentIds = resolveAllowedApartmentIds(buildingId, roleName);
+
         return maintenanceRequestRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(item -> status == null || status.isBlank()
                         || item.getStatus().equalsIgnoreCase(status.trim()))
                 .filter(item -> priority == null || priority.isBlank()
                         || item.getPriority().equalsIgnoreCase(priority.trim()))
                 .filter(item -> apartmentId == null || item.getApartmentId().equals(apartmentId))
+                .filter(item -> allowedApartmentIds == null || allowedApartmentIds.contains(item.getApartmentId()))
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    /**
+     * Admin sees all buildings. Manager/Staff are scoped to apartments under X-Building-Id.
+     * Returns null when no building filter should apply.
+     */
+    private Set<UUID> resolveAllowedApartmentIds(UUID buildingId, String roleName) {
+        String role = roleName == null ? "" : roleName.trim().toUpperCase(Locale.ROOT);
+
+        if ("ADMIN".equals(role)) {
+            return null;
+        }
+
+        if ("MANAGER".equals(role) || "STAFF".equals(role)) {
+            if (buildingId == null) {
+                return Set.of();
+            }
+            return apartmentClient.getApartmentsByBuildingId(buildingId).stream()
+                    .map(ApartmentResponse::getApartmentId)
+                    .collect(Collectors.toSet());
+        }
+
+        if (buildingId != null) {
+            return apartmentClient.getApartmentsByBuildingId(buildingId).stream()
+                    .map(ApartmentResponse::getApartmentId)
+                    .collect(Collectors.toSet());
+        }
+
+        return null;
     }
 
     @Override
@@ -152,6 +187,15 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     @Transactional(readOnly = true)
     public MaintenanceRequestResponse getById(UUID requestId) {
         return mapToResponse(getOrThrow(requestId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MaintenanceHistoryResponse> getHistoryByRequestId(UUID requestId) {
+        getOrThrow(requestId);
+        return maintenanceHistoryRepository.findByRequestIdOrderByChangedAtDesc(requestId).stream()
+                .map(this::mapHistoryToResponse)
+                .toList();
     }
 
     @Override
@@ -257,6 +301,18 @@ public class MaintenanceServiceImpl implements MaintenanceService {
                 .createdAt(entity.getCreatedAt())
                 .assignedAt(entity.getAssignedAt())
                 .resolvedAt(entity.getResolvedAt())
+                .build();
+    }
+
+    private MaintenanceHistoryResponse mapHistoryToResponse(MaintenanceHistory entity) {
+        return MaintenanceHistoryResponse.builder()
+                .historyId(entity.getHistoryId())
+                .requestId(entity.getRequestId())
+                .fromStatus(entity.getFromStatus())
+                .toStatus(entity.getToStatus())
+                .changedBy(entity.getChangedBy())
+                .note(entity.getNote())
+                .changedAt(entity.getChangedAt())
                 .build();
     }
 }

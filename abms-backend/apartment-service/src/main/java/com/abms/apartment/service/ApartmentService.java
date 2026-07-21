@@ -1,12 +1,8 @@
 package com.abms.apartment.service;
 
-import com.abms.apartment.dto.BuildingRequest;
-import com.abms.apartment.dto.BuildingResponse;
-import com.abms.apartment.dto.ApartmentResidentResponse;
-import com.abms.apartment.dto.ApartmentResponse;
-import com.abms.apartment.dto.ContractResponse;
-import com.abms.apartment.dto.RenewContractRequest;
-import com.abms.apartment.dto.ResidentRegistrationRequest;
+import com.abms.apartment.dto.*;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -44,13 +40,17 @@ public interface ApartmentService {
 
     List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId);
 
+    @Transactional
     ApartmentResidentResponse renewResidentContract(String authorizationHeader, UUID apartmentId, UUID userId);
 
+    @Transactional
     ApartmentResidentResponse removeResidentFromApartment(String authorizationHeader, UUID apartmentId, UUID userId);
 
-    List<ContractResponse> listContracts(String authorizationHeader, UUID buildingId);
+    // --- contracts listing and management ---
+    List<com.abms.apartment.dto.ContractResponse> listContracts(String authorizationHeader, UUID buildingId);
 
-    ContractResponse getContractById(String authorizationHeader, UUID contractId);
+    com.abms.apartment.dto.ContractResponse getContractById(String authorizationHeader, UUID contractId);
 
-    ContractResponse renewContract(String authorizationHeader, UUID contractId, RenewContractRequest request);
+    @Transactional
+    com.abms.apartment.dto.ContractResponse renewContract(String authorizationHeader, UUID contractId, com.abms.apartment.dto.RenewContractRequest request);
 }
