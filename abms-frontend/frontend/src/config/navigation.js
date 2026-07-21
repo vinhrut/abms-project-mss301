@@ -68,7 +68,6 @@ export const navigationSections = [
       { label: 'Invoices', to: APP_ROUTES.invoices, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'Payments', to: APP_ROUTES.payments, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'Maintenance', to: APP_ROUTES.maintenance, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.TECHNICIAN, ROLE_KEYS.RESIDENT] },
-      { label: 'Submit Request', to: APP_ROUTES.maintenanceSubmit, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
       { label: 'My Tasks', to: APP_ROUTES.maintenanceTasks, roles: [ROLE_KEYS.TECHNICIAN] },
       { label: 'Vehicles', to: APP_ROUTES.vehicles, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
     ],

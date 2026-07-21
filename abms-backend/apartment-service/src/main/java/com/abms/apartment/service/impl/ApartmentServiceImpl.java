@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -197,13 +198,25 @@ public class ApartmentServiceImpl implements ApartmentService {
 
     @Override
     public List<ApartmentResponse> getMyApartments(UUID userId) {
-        return apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
+        List<UUID> apartmentIds = apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
                 .stream()
                 .map(ApartmentResident::getApartmentId)
                 .distinct()
-                .map(apartmentId -> apartmentRepository.findById(apartmentId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId)))
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, ApartmentResponse> apartmentsById = new LinkedHashMap<>();
+        apartmentRepository.findAllById(apartmentIds)
+                .stream()
                 .map(this::mapApartment)
+                .forEach(apartment -> apartmentsById.put(apartment.getApartmentId(), apartment));
+
+        return apartmentIds.stream()
+                .map(apartmentsById::get)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -269,10 +282,6 @@ public class ApartmentServiceImpl implements ApartmentService {
             return 0;
         }
         return floors;
-    }
-
-    private ApartmentResidentResponse mapResident(ApartmentResident apartmentResident) {
-        return mapResident(apartmentResident, null);
     }
 
     private ApartmentResidentResponse mapResident(ApartmentResident apartmentResident, String authorizationHeader) {
@@ -492,60 +501,5 @@ public class ApartmentServiceImpl implements ApartmentService {
             return defaultValue;
         }
         return value.trim().toUpperCase();
-    }
-
-    @Override
-    public List<ApartmentResponse> getMyApartments(UUID userId) {
-        List<UUID> apartmentIds = apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
-                .stream()
-                .map(ApartmentResident::getApartmentId)
-                .distinct()
-                .toList();
-
-        if (apartmentIds.isEmpty()) {
-            return List.of();
-        }
-
-        Map<UUID, ApartmentResponse> apartmentsById = new LinkedHashMap<>();
-        apartmentRepository.findAllById(apartmentIds)
-                .stream()
-                .map(this::mapApartment)
-                .forEach(apartment -> apartmentsById.put(apartment.getApartmentId(), apartment));
-
-        return apartmentIds.stream()
-                .map(apartmentsById::get)
-                .filter(java.util.Objects::nonNull)
-                .toList();
-    }
-
-    @Override
-    public List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId) {
-        apartmentRepository.findById(apartmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId));
-
-        return apartmentResidentRepository.findByApartmentIdOrderByCreatedAtAsc(apartmentId)
-                .stream()
-                .map(this::mapResident)
-                .toList();
-    }
-
-    @Override
-    public List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId) {
-        buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
-
-        List<UUID> apartmentIds = apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
-                .stream()
-                .map(Apartment::getApartmentId)
-                .toList();
-
-        if (apartmentIds.isEmpty()) {
-            return List.of();
-        }
-
-        return apartmentResidentRepository.findByApartmentIdInAndStatusOrderByCreatedAtAsc(apartmentIds, ACTIVE)
-                .stream()
-                .map(this::mapResident)
-                .toList();
     }
 }

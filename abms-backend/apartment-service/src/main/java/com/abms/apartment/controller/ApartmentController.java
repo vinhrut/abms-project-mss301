@@ -5,6 +5,7 @@ import com.abms.apartment.dto.ApartmentResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
 import com.abms.apartment.security.BuildingAccessService;
 import com.abms.apartment.service.ApartmentService;
+import com.abms.apartment.repository.ApartmentResidentRepository;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/apartments")

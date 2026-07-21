@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { apartmentService } from '../../../services/apartmentService.js'
 import { maintenanceService } from '../../../services/maintenanceService.js'
 import { userService } from '../../../services/userService.js'
@@ -7,6 +7,7 @@ import { extractApiErrorMessage } from '../../../utils/apiError.js'
 import { APP_ROUTES, getMaintenanceDetailRoute } from '../../../config/navigation.js'
 import { ROLE_KEYS, normalizeRole } from '../../../config/roles.js'
 import { useAuth } from '../../auth/context/useAuth.js'
+import { MaintenanceSubmitModal } from '../components/MaintenanceSubmitModal.jsx'
 
 const categoryLabels = {
   PLUMBING: 'Plumbing',
@@ -42,14 +43,17 @@ function formatDate(value) {
 
 export function MaintenanceListPage() {
   const { auth } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const role = normalizeRole(auth?.roleName)
   const canAssign = role === ROLE_KEYS.ADMIN || role === ROLE_KEYS.MANAGER || role === ROLE_KEYS.STAFF
   const isResident = role === ROLE_KEYS.RESIDENT
   const isTechnician = role === ROLE_KEYS.TECHNICIAN
+  const canSubmit = isResident
 
   const [requests, setRequests] = useState([])
   const [apartmentMap, setApartmentMap] = useState({})
   const [technicians, setTechnicians] = useState([])
+  const [technicianMap, setTechnicianMap] = useState({})
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -57,6 +61,7 @@ export function MaintenanceListPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [actionMessage, setActionMessage] = useState('')
+  const [submitOpen, setSubmitOpen] = useState(false)
 
   const loadRequests = async () => {
     try {
@@ -84,6 +89,13 @@ export function MaintenanceListPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (searchParams.get('submit') === '1' && canSubmit) {
+      setSubmitOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams, canSubmit])
 
   useEffect(() => {
     loadRequests()
@@ -116,12 +128,20 @@ export function MaintenanceListPage() {
     const loadTechnicians = async () => {
       try {
         const users = await userService.getUsers()
-        const list = (Array.isArray(users) ? users : []).filter(
-          (user) => normalizeRole(user.roleName) === ROLE_KEYS.TECHNICIAN && user.status === 'ACTIVE',
+        const allUsers = Array.isArray(users) ? users : []
+        const map = {}
+        allUsers.forEach((user) => {
+          map[user.userId] = user.fullName || user.email || user.userId
+        })
+        setTechnicianMap(map)
+        setTechnicians(
+          allUsers.filter(
+            (user) => normalizeRole(user.roleName) === ROLE_KEYS.TECHNICIAN && user.status === 'ACTIVE',
+          ),
         )
-        setTechnicians(list)
       } catch {
         setTechnicians([])
+        setTechnicianMap({})
       }
     }
 
@@ -129,18 +149,32 @@ export function MaintenanceListPage() {
   }, [canAssign])
 
   const filteredRequests = useMemo(() => {
-    const normalized = searchTerm.trim().toLowerCase()
-    if (!normalized) {
-      return requests
+    let scoped = requests
+    if (auth?.buildingId) {
+      const allowedApartmentIds = new Set(Object.keys(apartmentMap))
+      if (allowedApartmentIds.size > 0) {
+        scoped = requests.filter((item) => allowedApartmentIds.has(item.apartmentId))
+      }
     }
 
-    return requests.filter((item) => {
+    const normalized = searchTerm.trim().toLowerCase()
+    if (!normalized) {
+      return scoped
+    }
+
+    return scoped.filter((item) => {
       const code = item.requestCode?.toLowerCase() || ''
       const title = item.title?.toLowerCase() || ''
       const room = (apartmentMap[item.apartmentId] || item.apartmentId || '').toLowerCase()
-      return code.includes(normalized) || title.includes(normalized) || room.includes(normalized)
+      const technician = (technicianMap[item.technicianId] || '').toLowerCase()
+      return (
+        code.includes(normalized)
+        || title.includes(normalized)
+        || room.includes(normalized)
+        || technician.includes(normalized)
+      )
     })
-  }, [requests, searchTerm, apartmentMap])
+  }, [requests, searchTerm, apartmentMap, technicianMap, auth?.buildingId])
 
   const handleAssign = async (requestId) => {
     const technicianId = assignSelections[requestId]
@@ -180,12 +214,23 @@ export function MaintenanceListPage() {
                 : 'Xem các ticket đang được giao cho bạn.'}
           </p>
         </div>
-        {isResident || canAssign ? (
-          <Link className="btn btn-primary" to={APP_ROUTES.maintenanceSubmit}>
+        {canSubmit ? (
+          <button type="button" className="btn btn-primary" onClick={() => setSubmitOpen(true)}>
             Gửi yêu cầu mới
-          </Link>
+          </button>
         ) : null}
       </section>
+
+      <MaintenanceSubmitModal
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        onSubmitted={(response) => {
+          setActionMessage(
+            `Đã gửi yêu cầu ${response.requestCode || ''} thành công. Trạng thái: ${response.status || 'OPEN'}.`,
+          )
+          loadRequests()
+        }}
+      />
 
       <section className="content-card">
         <div className="toolbar-grid">
@@ -280,33 +325,41 @@ export function MaintenanceListPage() {
                       </td>
                       <td>{formatDate(item.createdAt)}</td>
                       {canAssign ? (
-                        <td>
-                          {item.status === 'OPEN' || item.status === 'IN_PROGRESS' ? (
-                            <div className="inline-actions">
-                              <select
-                                value={assignSelections[item.requestId] || item.technicianId || ''}
-                                onChange={(event) =>
-                                  setAssignSelections((prev) => ({
-                                    ...prev,
-                                    [item.requestId]: event.target.value,
-                                  }))
-                                }
-                              >
-                                <option value="">Technician</option>
-                                {technicians.map((tech) => (
-                                  <option key={tech.userId} value={tech.userId}>
-                                    {tech.fullName || tech.email}
-                                  </option>
-                                ))}
-                              </select>
+                        <td className="maint-assign-cell">
+                          {!item.technicianId && item.status === 'OPEN' ? (
+                            <div className="maint-assign">
+                              <div className="maint-assign-select-wrap">
+                                <select
+                                  className="maint-assign-select"
+                                  value={assignSelections[item.requestId] || ''}
+                                  onChange={(event) =>
+                                    setAssignSelections((prev) => ({
+                                      ...prev,
+                                      [item.requestId]: event.target.value,
+                                    }))
+                                  }
+                                  aria-label="Chọn kỹ thuật viên"
+                                >
+                                  <option value="">Select technician</option>
+                                  {technicians.map((tech) => (
+                                    <option key={tech.userId} value={tech.userId}>
+                                      {tech.fullName || tech.email}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                               <button
                                 type="button"
-                                className="btn btn-secondary"
+                                className="btn btn-secondary maint-assign-btn"
                                 onClick={() => handleAssign(item.requestId)}
                               >
                                 Assign
                               </button>
                             </div>
+                          ) : item.technicianId ? (
+                            <span className="maint-assigned-tech">
+                              {technicianMap[item.technicianId] || 'Đã phân công'}
+                            </span>
                           ) : (
                             <span className="muted-text">—</span>
                           )}

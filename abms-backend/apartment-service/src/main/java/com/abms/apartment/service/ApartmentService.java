@@ -1,11 +1,6 @@
 package com.abms.apartment.service;
 
-import com.abms.apartment.dto.BuildingResponse;
-import com.abms.apartment.dto.ApartmentResidentResponse;
-import com.abms.apartment.dto.ApartmentResponse;
-import com.abms.apartment.dto.ContractResponse;
-import com.abms.apartment.dto.RenewContractRequest;
-import com.abms.apartment.dto.ResidentRegistrationRequest;
+import com.abms.apartment.dto.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

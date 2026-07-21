@@ -11,7 +11,8 @@ public interface MaintenanceService {
 
     MaintenanceRequestResponse submitRequest(SubmitMaintenanceRequest request, UUID actorUserId, String actorEmail);
 
-    List<MaintenanceRequestResponse> listRequests(String status, String priority, UUID apartmentId);
+    List<MaintenanceRequestResponse> listRequests(
+            String status, String priority, UUID apartmentId, UUID buildingId, String roleName);
 
     List<MaintenanceRequestResponse> listBySender(UUID senderId);
 
