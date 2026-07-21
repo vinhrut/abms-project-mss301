@@ -1596,6 +1596,132 @@ a {
   }
 }
 
+/* Create Announcement — UC-NOTIF-01 */
+.create-announcement-page {
+  width: 100%;
+}
+
+.create-announcement-card {
+  width: 100%;
+}
+
+.create-announcement-card .alert {
+  margin-bottom: 16px;
+}
+
+.announcement-form {
+  width: 100%;
+  gap: 20px;
+}
+
+.announcement-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.announcement-fieldset legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: center;
+}
+
+.choice-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.choice-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.announcement-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.announcement-split__group {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.announcement-form .form-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.announcement-form .form-actions .btn {
+  min-width: 112px;
+}
+
+.field-hint {
+  color: var(--muted, #64748b);
+  font-size: 12px;
+}
+
+.announcement-preview-modal {
+  width: min(560px, 100%);
+}
+
+.announcement-preview-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin: 0 0 16px;
+}
+
+.announcement-preview-meta div {
+  display: grid;
+  gap: 4px;
+}
+
+.announcement-preview-meta dt {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.announcement-preview-meta dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.announcement-preview-body {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .announcement-split {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-preview-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* System Job Monitor — Monthly Invoice Notification */
 .job-monitor-toolbar {
   display: flex;

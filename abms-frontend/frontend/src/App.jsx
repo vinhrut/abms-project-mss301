@@ -20,6 +20,7 @@ import { HomePage } from './features/home/pages/HomePage.jsx'
 import { MaintenanceListPage } from './features/maintenance/pages/MaintenanceListPage.jsx'
 import { MaintenanceSubmitPage } from './features/maintenance/pages/MaintenanceSubmitPage.jsx'
 import { MyTasksPage } from './features/maintenance/pages/MyTasksPage.jsx'
+import { CreateAnnouncementPage } from './features/notifications/pages/CreateAnnouncementPage.jsx'
 import { NotificationListPage } from './features/notifications/pages/NotificationListPage.jsx'
 import { ReportListPage } from './features/reports/pages/ReportListPage.jsx'
 import { ResidentListPage } from './features/residents/pages/ResidentListPage.jsx'
@@ -59,6 +60,7 @@ function App() {
           <Route path={APP_ROUTES.vehicles} element={<VehicleListPage />} />
           <Route path={APP_ROUTES.vehicleRegister} element={<VehicleRegisterPage />} />
           <Route path={APP_ROUTES.notifications} element={<NotificationListPage />} />
+          <Route path={APP_ROUTES.notificationsCreate} element={<CreateAnnouncementPage />} />
           <Route path={APP_ROUTES.reports} element={<ReportListPage />} />
           <Route path={APP_ROUTES.jobs} element={<JobMonitorPage />} />
           <Route path={APP_ROUTES.profile} element={<ProfilePage />} />

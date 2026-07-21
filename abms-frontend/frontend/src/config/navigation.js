@@ -22,6 +22,7 @@ export const APP_ROUTES = {
   vehicles: '/app/vehicles',
   vehicleRegister: '/app/vehicles/register',
   notifications: '/app/notifications',
+  notificationsCreate: '/app/notifications/create',
   reports: '/app/reports',
   jobs: '/app/system/jobs',
 }
@@ -74,6 +75,7 @@ export const navigationSections = [
     items: [
       { label: 'Reports', to: APP_ROUTES.reports, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER] },
       { label: 'Notifications', to: APP_ROUTES.notifications, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER, ROLE_KEYS.STAFF, ROLE_KEYS.RESIDENT] },
+      { label: 'Create Announcement', to: APP_ROUTES.notificationsCreate, roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MANAGER] },
       { label: 'System Jobs', to: APP_ROUTES.jobs, roles: [ROLE_KEYS.ADMIN] },
     ],
   },
