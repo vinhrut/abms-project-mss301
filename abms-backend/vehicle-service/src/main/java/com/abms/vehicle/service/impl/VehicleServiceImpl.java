@@ -4,6 +4,7 @@ import com.abms.vehicle.client.ApartmentClient;
 import com.abms.vehicle.constant.RoleNames;
 import com.abms.vehicle.constant.VehicleStatus;
 import com.abms.vehicle.constant.VehicleType;
+import com.abms.vehicle.dto.ApartmentResidentResponse;
 import com.abms.vehicle.dto.ApartmentResponse;
 import com.abms.vehicle.dto.VehicleRequest;
 import com.abms.vehicle.dto.VehicleResponse;
@@ -47,15 +48,15 @@ public class VehicleServiceImpl implements VehicleService {
         ensureRole(actor, RoleNames.RESIDENT);
         String normalizedLicensePlate = normalizeLicensePlate(request.getLicensePlate());
         String normalizedType = normalizeVehicleType(request.getType());
+        UUID apartmentId = resolveResidentApartmentId(actor.getUserId(), request.getApartmentId());
 
-        validateApartment(request.getApartmentId());
-        validateResidentResidence(actor.getUserId(), request.getApartmentId());
+        validateApartment(apartmentId);
+        validateResidentResidence(actor.getUserId(), apartmentId);
         removeClosedVehicleWithSameLicensePlateOrThrow(normalizedLicensePlate);
-        validateApprovedVehicleLimit(request.getApartmentId(), normalizedType);
 
         Vehicle vehicle = Vehicle.builder()
                 .vehicleId(UUID.randomUUID())
-                .apartmentId(request.getApartmentId())
+                .apartmentId(apartmentId)
                 .ownerId(actor.getUserId())
                 .licensePlate(normalizedLicensePlate)
                 .type(normalizedType)
@@ -63,6 +64,18 @@ public class VehicleServiceImpl implements VehicleService {
                 .status(VehicleStatus.PENDING)
                 .build();
         return mapToResponse(vehicleRepository.save(vehicle));
+    }
+
+    private UUID resolveResidentApartmentId(UUID userId, UUID requestedApartmentId) {
+        if (requestedApartmentId != null) {
+            return requestedApartmentId;
+        }
+
+        ApartmentResidentResponse activeResidence = apartmentClient.getActiveResidenceByUserId(userId);
+        if (activeResidence == null || activeResidence.getApartmentId() == null) {
+            throw new ResourceNotFoundException("Active apartment not found for resident: " + userId);
+        }
+        return activeResidence.getApartmentId();
     }
 
     @Override
@@ -86,11 +99,12 @@ public class VehicleServiceImpl implements VehicleService {
         String normalizedType = normalizeVehicleType(request.getType());
         validateApartment(request.getApartmentId());
         validateResidentResidence(ownerId, request.getApartmentId());
-        ensureCanManageApartment(actor, request.getApartmentId());
+        if (!RoleNames.RESIDENT.equals(actor.getRoleName())) {
+            ensureCanManageApartment(actor, request.getApartmentId());
+        }
         if (vehicleRepository.existsByLicensePlateAndVehicleIdNot(normalizedLicensePlate, vehicleId)) {
             throw new DuplicateLicensePlateException("This license plate is already registered in the system: " + normalizedLicensePlate);
         }
-        ensureVehicleLimitExists(request.getApartmentId(), normalizedType);
 
         vehicle.setApartmentId(request.getApartmentId());
         vehicle.setOwnerId(ownerId);
@@ -176,6 +190,11 @@ public class VehicleServiceImpl implements VehicleService {
         if (VehicleStatus.REJECTED.equalsIgnoreCase(vehicle.getStatus()) || VehicleStatus.CANCELLED.equalsIgnoreCase(vehicle.getStatus()) || VehicleStatus.INACTIVE.equalsIgnoreCase(vehicle.getStatus())) {
             throw new InvalidVehicleStatusException("This vehicle registration is already closed");
         }
+        if (VehicleStatus.APPROVED.equalsIgnoreCase(vehicle.getStatus())) {
+            vehicle.setStatus(VehicleStatus.PENDING_CANCEL);
+            return mapToResponse(vehicleRepository.save(vehicle));
+        }
+
         VehicleResponse response = mapToResponse(vehicle);
         vehicleRepository.delete(vehicle);
         vehicleRepository.flush();
@@ -187,7 +206,9 @@ public class VehicleServiceImpl implements VehicleService {
         if (existingVehicle.isEmpty()) return;
 
         Vehicle vehicle = existingVehicle.get();
-        if (VehicleStatus.PENDING.equalsIgnoreCase(vehicle.getStatus()) || VehicleStatus.APPROVED.equalsIgnoreCase(vehicle.getStatus())) {
+        if (VehicleStatus.PENDING.equalsIgnoreCase(vehicle.getStatus())
+                || VehicleStatus.PENDING_CANCEL.equalsIgnoreCase(vehicle.getStatus())
+                || VehicleStatus.APPROVED.equalsIgnoreCase(vehicle.getStatus())) {
             throw new DuplicateLicensePlateException("This license plate is already registered in the system: " + licensePlate);
         }
 
@@ -200,6 +221,9 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private void validateApartment(UUID apartmentId) {
+        if (apartmentId == null) {
+            throw new ResourceNotFoundException("Apartment id is required for vehicle registration");
+        }
         String apartmentStatus = apartmentClient.getApartmentById(apartmentId).getStatus();
         if (apartmentStatus == null || VehicleStatus.INACTIVE.equalsIgnoreCase(apartmentStatus)) {
             throw new ResourceNotFoundException("Apartment is not active: " + apartmentId);

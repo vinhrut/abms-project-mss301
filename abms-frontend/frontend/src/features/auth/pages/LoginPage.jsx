@@ -1,5 +1,4 @@
-import { useLocation } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../context/useAuth.js'
 import { validateLoginForm } from '../utils/authValidation.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'
@@ -15,12 +14,6 @@ export function LoginPage() {
   const [apiError, setApiError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { login } = useAuth()
-  const location = useLocation()
-
-  const redirectHint = useMemo(
-    () => location.state?.from?.pathname || '/dashboard',
-    [location.state],
-  )
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -52,51 +45,57 @@ export function LoginPage() {
   }
 
   return (
-    <div className="auth-card">
-      <div className="auth-card__header">
-        <span className="eyebrow">Đăng nhập</span>
-        <h2>Đăng nhập hệ thống</h2>
-        <p>Đăng nhập để truy cập đúng workspace theo vai trò. Tài khoản được cấp bởi Admin hoặc Manager, không đăng ký công khai.</p>
+    <div className="auth-card login-sketch-card">
+      <div className="auth-card__header login-sketch-card__header">
+        <div className="login-sketch-card__close" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img" focusable="false">
+            <path d="M12 42V16.5L24 7l12 9.5V42" />
+            <path d="M18 42V24h12v18" />
+            <path d="M17 18h2M23 18h2M29 18h2M17 24h2M29 24h2M17 30h2M29 30h2" />
+          </svg>
+        </div>
+        <h2>ĐĂNG NHẬP</h2>
+        <p>Hệ thống Quản lý Chung cư ABMS</p>
       </div>
 
-      <form className="form-grid" onSubmit={handleSubmit}>
-        <label className="form-field">
-          <span>Email *</span>
+      <form className="form-grid login-sketch-form" onSubmit={handleSubmit}>
+        <label className="form-field login-sketch-field">
+          <span>EMAIL</span>
           <input
             type="email"
             name="email"
-            placeholder="user@example.com"
+            placeholder="Nhập email"
             value={formData.email}
             onChange={handleChange}
           />
           {errors.email ? <small className="field-error">{errors.email}</small> : null}
         </label>
 
-        <label className="form-field">
-          <span>Mật khẩu *</span>
+        <label className="form-field login-sketch-field">
+          <span>MẬT KHẨU</span>
           <input
             type="password"
             name="password"
-            placeholder="••••••••"
+            placeholder="password123"
             value={formData.password}
             onChange={handleChange}
           />
           {errors.password ? <small className="field-error">{errors.password}</small> : null}
         </label>
 
+        <a className="login-sketch-form__forgot" href="#forgot-password">
+          Quên mật khẩu?
+        </a>
+
         {apiError ? <div className="alert alert-error">{apiError}</div> : null}
 
-        <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
-          {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        <button type="submit" className="btn btn-block login-sketch-form__submit" disabled={isSubmitting}>
+          {isSubmitting ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
         </button>
-
-        <div className="auth-inline-note">
-          <strong>Ghi chú nghiệp vụ:</strong> nếu bạn chưa có tài khoản, vui lòng liên hệ Admin hoặc Ban quản lý tòa nhà để được cấp quyền truy cập.
-        </div>
       </form>
 
-      <div className="auth-card__footer">
-        <small>Trang được bảo vệ. Sau khi đăng nhập, hệ thống sẽ chuyển bạn đến khu vực phù hợp.</small>
+      <div className="auth-card__footer login-sketch-card__footer">
+        <small>2026 ABMS Management</small>
       </div>
     </div>
   )

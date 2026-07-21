@@ -6,6 +6,7 @@ import { userService } from '../../../services/userService.js'
 import { vehicleService } from '../../../services/vehicleService.js'
 import { useAuth } from '../../auth/context/useAuth.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'
+import { isValidUuid } from '../../../utils/validation.js'
 import { validateVehicleForm } from '../utils/vehicleValidation.js'
 
 function normalizeCollection(data) {
@@ -20,6 +21,11 @@ function normalizeCollection(data) {
 function getApartmentId(apartment) {
   if (typeof apartment === 'string') return apartment
   return apartment?.apartmentId || apartment?.id || apartment?.apartment_id || ''
+}
+
+function getValidApartmentId(apartment) {
+  const apartmentId = getApartmentId(apartment)
+  return isValidUuid(apartmentId) ? apartmentId : ''
 }
 
 function getApartmentDisplayName(apartment) {
@@ -64,6 +70,7 @@ function getResidentLabel(user) {
 
 const statusLabelMap = {
   PENDING: 'Chờ duyệt',
+  PENDING_CANCEL: 'Chờ duyệt hủy',
   APPROVED: 'Đã duyệt',
   REJECTED: 'Từ chối',
   CANCELLED: 'Đã hủy',
@@ -77,6 +84,7 @@ const vehicleTypeLabelMap = {
 
 const statusClassMap = {
   PENDING: 'badge badge-warning',
+  PENDING_CANCEL: 'badge badge-warning',
   APPROVED: 'badge badge-success',
   REJECTED: 'badge badge-danger',
   CANCELLED: 'badge',
@@ -102,8 +110,9 @@ const emptyVehicleForm = {
   apartmentId: '',
   licensePlate: '',
   type: 'MOTORBIKE',
-  brand: '',
 }
+
+const residentModalPageSize = 3
 
 export function VehicleListPage() {
   const { auth, normalizedRole, isElevatedRole } = useAuth()
@@ -126,6 +135,9 @@ export function VehicleListPage() {
   const [formSubmitting, setFormSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [residentVehicleModal, setResidentVehicleModal] = useState('')
+  const [approvedVehiclePage, setApprovedVehiclePage] = useState(0)
+  const [submittedRequestPage, setSubmittedRequestPage] = useState(0)
 
   const loadVehicles = async (page = 0, filterValues = filters) => {
     try {
@@ -203,7 +215,7 @@ export function VehicleListPage() {
         setApartments(myApartments)
         await loadApartmentDetails(myApartments.map(getApartmentId))
         if (myApartments.length === 1) {
-          setVehicleForm((prev) => ({ ...prev, apartmentId: prev.apartmentId || getApartmentId(myApartments[0]) }))
+          setVehicleForm((prev) => ({ ...prev, apartmentId: prev.apartmentId || getValidApartmentId(myApartments[0]) }))
         }
       }
     } catch (apiError) {
@@ -268,6 +280,11 @@ export function VehicleListPage() {
     [apartments],
   )
 
+  const selectableResidentApartments = useMemo(
+    () => apartments.filter((apartment) => getValidApartmentId(apartment)),
+    [apartments],
+  )
+
   const userById = useMemo(
     () => new Map(users.map((user) => [user.userId, user])),
     [users],
@@ -312,7 +329,38 @@ export function VehicleListPage() {
     [vehicles],
   )
 
-  const hasPendingRequest = totalPending > 0
+  const approvedVehicleTotalPages = Math.max(1, Math.ceil(approvedVehicles.length / residentModalPageSize))
+  const submittedRequestTotalPages = Math.max(1, Math.ceil(submittedRequests.length / residentModalPageSize))
+
+  const paginatedApprovedVehicles = useMemo(
+    () => approvedVehicles.slice(
+      approvedVehiclePage * residentModalPageSize,
+      approvedVehiclePage * residentModalPageSize + residentModalPageSize,
+    ),
+    [approvedVehicles, approvedVehiclePage],
+  )
+
+  const paginatedSubmittedRequests = useMemo(
+    () => submittedRequests.slice(
+      submittedRequestPage * residentModalPageSize,
+      submittedRequestPage * residentModalPageSize + residentModalPageSize,
+    ),
+    [submittedRequests, submittedRequestPage],
+  )
+
+  useEffect(() => {
+    setApprovedVehiclePage((page) => Math.min(page, approvedVehicleTotalPages - 1))
+  }, [approvedVehicleTotalPages])
+
+  useEffect(() => {
+    setSubmittedRequestPage((page) => Math.min(page, submittedRequestTotalPages - 1))
+  }, [submittedRequestTotalPages])
+
+  const openResidentVehicleModal = (modalName) => {
+    if (modalName === 'approved') setApprovedVehiclePage(0)
+    if (modalName === 'submitted') setSubmittedRequestPage(0)
+    setResidentVehicleModal(modalName)
+  }
 
   const updateFilter = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }))
@@ -333,7 +381,7 @@ export function VehicleListPage() {
   const resetVehicleForm = () => {
     setVehicleForm({
       ...emptyVehicleForm,
-      apartmentId: apartments.length === 1 ? getApartmentId(apartments[0]) : '',
+      apartmentId: selectableResidentApartments.length === 1 ? getValidApartmentId(selectableResidentApartments[0]) : '',
     })
     setEditingVehicleId('')
     setFormErrors({})
@@ -341,14 +389,20 @@ export function VehicleListPage() {
 
   const handleSubmitVehicleForm = async (event) => {
     event.preventDefault()
+    const selectedApartmentId = vehicleForm.apartmentId.trim()
+    const validSelectedApartmentId = isValidUuid(selectedApartmentId) ? selectedApartmentId : ''
     const payload = {
-      apartmentId: vehicleForm.apartmentId.trim(),
       licensePlate: vehicleForm.licensePlate.trim().toUpperCase(),
       type: vehicleForm.type,
-      brand: vehicleForm.brand.trim() || undefined,
+    }
+    if (validSelectedApartmentId) {
+      payload.apartmentId = validSelectedApartmentId
     }
 
-    const validationErrors = validateVehicleForm(payload)
+    const validationErrors = validateVehicleForm(
+      { ...payload, apartmentId: validSelectedApartmentId },
+      { allowApartmentFallback: isResident && selectableResidentApartments.length === 0 },
+    )
     setFormErrors(validationErrors)
     if (Object.keys(validationErrors).length > 0) return
 
@@ -379,9 +433,9 @@ export function VehicleListPage() {
       apartmentId: getVehicleApartmentId(vehicle),
       licensePlate: vehicle.licensePlate || '',
       type: vehicle.type || 'MOTORBIKE',
-      brand: vehicle.brand || '',
     })
     setFormErrors({})
+    setResidentVehicleModal('')
     setMessage('Đang chỉnh sửa đơn chờ duyệt. Cập nhật thông tin rồi bấm lưu.')
   }
 
@@ -459,7 +513,7 @@ export function VehicleListPage() {
 
   return (
     <div className="page-stack vehicle-page">
-      <section className="page-header-card vehicle-page__header">
+      {/* <section className="page-header-card vehicle-page__header">
         <div>
           <span className="eyebrow">Quản lý phương tiện</span>
           <h1>{canManage ? 'Quản lý phương tiện' : 'Phương tiện của tôi'}</h1>
@@ -469,79 +523,12 @@ export function VehicleListPage() {
               : 'Theo dõi trạng thái xe đã đăng ký và gửi/hủy đăng ký gửi xe.'}
           </p>
         </div>
-      </section>
-
-      {isResident ? (
-        <section className="content-card">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">1. Xe đã duyệt</span>
-              <h2>Xe hiện tại của tôi</h2>
-              <p>Chỉ hiển thị các phương tiện đã được quản lý duyệt và đang được tính là xe hợp lệ của bạn.</p>
-            </div>
-          </div>
-
-          <div className="info-grid">
-            <article className="info-card">
-              <strong>Xe đã duyệt</strong>
-              <p>{approvedVehicles.length}</p>
-            </article>
-            <article className="info-card">
-              <strong>Người dùng</strong>
-              <p>{auth?.email || auth?.userId || 'Tài khoản hiện tại'}</p>
-            </article>
-          </div>
-
-        
-          {loading ? <div className="page-status">Đang tải dữ liệu phương tiện...</div> : null}
-
-          {!loading && approvedVehicles.length === 0 ? (
-            <div className="empty-state">
-              <h3>Chưa có xe nào được duyệt</h3>
-              <p>Khi quản lý duyệt đơn đăng ký, xe của bạn sẽ xuất hiện ở khu vực này.</p>
-            </div>
-          ) : null}
-
-          {!loading && approvedVehicles.length > 0 ? (
-            <div className="table-card">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Căn hộ</th>
-                    <th>Biển số</th>
-                    <th>Loại xe</th>
-                    <th>Hãng / mẫu xe</th>
-                    <th>Trạng thái</th>
-                    <th>Hủy đăng ký</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {approvedVehicles.map((vehicle) => (
-                    <tr key={vehicle.vehicleId}>
-                      <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
-                      <td>{vehicle.licensePlate}</td>
-                      <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
-                      <td>{vehicle.brand || '-'}</td>
-                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
-                      <td>
-                        <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>
-                          Gửi đơn hủy đăng ký
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+      </section>  */}
 
       {isResident ? (
         <section className="content-card vehicle-register-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Đăng ký phương tiện</span>
               <h2>{editingVehicleId ? 'Chỉnh sửa đơn đăng ký xe' : 'Đăng ký phương tiện mới'}</h2>
               <p>
                 Vui lòng điền chính xác thông tin phương tiện để Ban Quản Lý phê duyệt.
@@ -554,13 +541,19 @@ export function VehicleListPage() {
               <span>Chọn căn hộ</span>
               <select value={vehicleForm.apartmentId} onChange={(event) => updateVehicleForm('apartmentId', event.target.value)} disabled={lookupLoading}>
                 <option value="">{lookupLoading ? 'Đang tải căn hộ...' : 'Chọn căn hộ của bạn'}</option>
-                {apartments.map((apartment) => (
-                  <option key={getApartmentId(apartment)} value={getApartmentId(apartment)}>
+                {selectableResidentApartments.map((apartment) => (
+                  <option key={getValidApartmentId(apartment)} value={getValidApartmentId(apartment)}>
                     {getApartmentDisplayName(apartment)}
                   </option>
                 ))}
               </select>
-              {formErrors.apartmentId ? <small className="field-error">{formErrors.apartmentId}</small> : <small>Danh sách này lấy từ các căn hộ đang gắn với tài khoản của bạn.</small>}
+              {formErrors.apartmentId ? (
+                <small className="field-error">{formErrors.apartmentId}</small>
+              ) : selectableResidentApartments.length === 0 && !lookupLoading ? (
+                <small>Không tải được danh sách căn hộ. Hệ thống sẽ tự kiểm tra căn hộ ACTIVE của tài khoản khi gửi đơn.</small>
+              ) : (
+                <small>Danh sách này lấy từ các căn hộ đang gắn với tài khoản của bạn.</small>
+              )}
             </label>
 
             <label className="form-field vehicle-form-field">
@@ -594,82 +587,154 @@ export function VehicleListPage() {
               {formErrors.type ? <small className="field-error">{formErrors.type}</small> : null}
             </label>
 
-            <label className="form-field vehicle-form-field vehicle-form-field--full">
-              <span>Hãng / mẫu xe</span>
-              <input value={vehicleForm.brand} onChange={(event) => updateVehicleForm('brand', event.target.value)} placeholder="Honda, Toyota..." />
-              <small>Không bắt buộc. Có thể nhập hãng hoặc model xe để manager dễ nhận diện.</small>
-            </label>
-
             <div className="vehicle-register-actions">
               <button className="btn btn-ghost" type="button" onClick={resetVehicleForm}>
                 {editingVehicleId ? 'Hủy chỉnh sửa' : 'Hủy'}
               </button>
-              <button className="btn btn-primary" type="submit" disabled={formSubmitting || apartments.length === 0}>
+              <button className="btn btn-primary" type="submit" disabled={formSubmitting || lookupLoading}>
                 {formSubmitting ? 'Đang lưu...' : editingVehicleId ? 'Lưu chỉnh sửa' : 'Gửi đơn đăng ký'}
               </button>
             </div>
           </form>
         </section>
       ) : null}
+        
+
       {error ? <div className="alert alert-error">{error}</div> : null}
       {message ? <div className="alert alert-success">{message}</div> : null}
       
 
-      {isResident ? (
-        <section className="content-card">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">3. Đơn đã gửi</span>
-              <h2>Các đơn đã gửi</h2>
-              <p>Cư dân chỉ được chỉnh sửa hoặc hủy đơn khi đơn vẫn ở trạng thái chờ duyệt, chưa được quản lý xử lý.</p>
+      {isResident && residentVehicleModal === 'approved' ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setResidentVehicleModal('')}>
+          <div className="modal-card vehicle-modal-card" role="dialog" aria-modal="true" aria-labelledby="approved-vehicles-title" onClick={(event) => event.stopPropagation()}>
+            <div className="section-heading vehicle-modal-heading">
+              <div>
+                <span className="eyebrow">Xe đã duyệt</span>
+                <h2 id="approved-vehicles-title">Xe hiện tại của tôi</h2>
+                <p>Chỉ hiển thị các phương tiện đã được quản lý duyệt và đang được tính là xe hợp lệ của bạn.</p>
+              </div>
+              <button className="btn btn-ghost" type="button" onClick={() => setResidentVehicleModal('')}>Đóng</button>
             </div>
-          </div>
 
-          {!loading && submittedRequests.length === 0 ? (
-            <div className="empty-state">
-              <h3>Chưa có đơn nào đã gửi</h3>
-              <p>Các đơn đăng ký/hủy đăng ký đang chờ xử lý hoặc đã bị từ chối sẽ hiển thị tại đây.</p>
-            </div>
-          ) : null}
+            {loading ? <div className="page-status">Đang tải dữ liệu phương tiện...</div> : null}
 
-          {!loading && submittedRequests.length > 0 ? (
-            <div className="table-card">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Căn hộ</th>
-                    <th>Biển số</th>
-                    <th>Loại xe</th>
-                    <th>Hãng / mẫu xe</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submittedRequests.map((vehicle) => (
-                    <tr key={vehicle.vehicleId}>
-                      <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
-                      <td>{vehicle.licensePlate}</td>
-                      <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
-                      <td>{vehicle.brand || '-'}</td>
-                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
-                      <td>
-                        {vehicle.status === 'PENDING' ? (
-                          <div className="table-actions">
-                            <button className="btn btn-ghost" type="button" onClick={() => handleEditVehicle(vehicle)}>Chỉnh sửa</button>
-                            <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>Hủy đơn</button>
-                          </div>
-                        ) : (
-                          <span className="table-note">Quản lý đã xử lý, không thể chỉnh sửa</span>
-                        )}
-                      </td>
+            {!loading && approvedVehicles.length === 0 ? (
+              <div className="empty-state">
+                <h3>Chưa có xe nào được duyệt</h3>
+                <p>Khi quản lý duyệt đơn đăng ký, xe của bạn sẽ xuất hiện ở khu vực này.</p>
+              </div>
+            ) : null}
+
+            {!loading && approvedVehicles.length > 0 ? (
+              <div className="table-card vehicle-modal-table-card">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Căn hộ</th>
+                      <th>Biển số</th>
+                      <th>Loại xe</th>
+                      <th>Trạng thái</th>
+                      <th>Hủy đăng ký</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedApprovedVehicles.map((vehicle) => (
+                      <tr key={vehicle.vehicleId}>
+                        <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
+                        <td>{vehicle.licensePlate}</td>
+                        <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
+                        <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
+                        <td>
+                          <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>
+                            Gửi đơn hủy đăng ký
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="form-actions vehicle-modal-pagination">
+                  <button className="btn btn-ghost" type="button" disabled={approvedVehiclePage <= 0} onClick={() => setApprovedVehiclePage((page) => Math.max(0, page - 1))}>
+                    Trang trước
+                  </button>
+                  <span className="table-note">Trang {approvedVehiclePage + 1}/{approvedVehicleTotalPages} · {approvedVehicles.length} bản ghi</span>
+                  <button className="btn btn-ghost" type="button" disabled={approvedVehiclePage + 1 >= approvedVehicleTotalPages} onClick={() => setApprovedVehiclePage((page) => Math.min(approvedVehicleTotalPages - 1, page + 1))}>
+                    Trang sau
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {isResident && residentVehicleModal === 'submitted' ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setResidentVehicleModal('')}>
+          <div className="modal-card vehicle-modal-card" role="dialog" aria-modal="true" aria-labelledby="submitted-requests-title" onClick={(event) => event.stopPropagation()}>
+            <div className="section-heading vehicle-modal-heading">
+              <div>
+                <span className="eyebrow">Đơn đã gửi</span>
+                <h2 id="submitted-requests-title">Các đơn đã gửi</h2>
+                <p>Cư dân chỉ được chỉnh sửa hoặc hủy đơn khi đơn vẫn ở trạng thái chờ duyệt, chưa được quản lý xử lý.</p>
+              </div>
+              <button className="btn btn-ghost" type="button" onClick={() => setResidentVehicleModal('')}>Đóng</button>
             </div>
-          ) : null}
-        </section>
+
+            {loading ? <div className="page-status">Đang tải dữ liệu phương tiện...</div> : null}
+
+            {!loading && submittedRequests.length === 0 ? (
+              <div className="empty-state">
+                <h3>Chưa có đơn nào đã gửi</h3>
+                <p>Các đơn đăng ký/hủy đăng ký đang chờ xử lý hoặc đã bị từ chối sẽ hiển thị tại đây.</p>
+              </div>
+            ) : null}
+
+            {!loading && submittedRequests.length > 0 ? (
+              <div className="table-card vehicle-modal-table-card">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Căn hộ</th>
+                      <th>Biển số</th>
+                      <th>Loại xe</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedSubmittedRequests.map((vehicle) => (
+                      <tr key={vehicle.vehicleId}>
+                        <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
+                        <td>{vehicle.licensePlate}</td>
+                        <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
+                        <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
+                        <td>
+                          {vehicle.status === 'PENDING' ? (
+                            <div className="table-actions">
+                              <button className="btn btn-ghost" type="button" onClick={() => handleEditVehicle(vehicle)}>Chỉnh sửa</button>
+                              <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>Hủy đơn</button>
+                            </div>
+                          ) : (
+                            <span className="table-note">Quản lý đã xử lý, không thể chỉnh sửa</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="form-actions vehicle-modal-pagination">
+                  <button className="btn btn-ghost" type="button" disabled={submittedRequestPage <= 0} onClick={() => setSubmittedRequestPage((page) => Math.max(0, page - 1))}>
+                    Trang trước
+                  </button>
+                  <span className="table-note">Trang {submittedRequestPage + 1}/{submittedRequestTotalPages} · {submittedRequests.length} bản ghi</span>
+                  <button className="btn btn-ghost" type="button" disabled={submittedRequestPage + 1 >= submittedRequestTotalPages} onClick={() => setSubmittedRequestPage((page) => Math.min(submittedRequestTotalPages - 1, page + 1))}>
+                    Trang sau
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       {!isResident ? (
@@ -686,7 +751,7 @@ export function VehicleListPage() {
             </label>
           ) : null}
         </div>
-        <div className="info-grid">
+        {/* <div className="info-grid">
           <article className="info-card">
             <strong>{canManage ? 'Đơn chờ duyệt' : 'Tổng xe của tôi'}</strong>
             <p>{canManage ? totalPending : vehicles.length}</p>
@@ -695,15 +760,16 @@ export function VehicleListPage() {
             <strong>Người dùng</strong>
             <p>{auth?.email || auth?.userId || 'Tài khoản hiện tại'}</p>
           </article>
-        </div>
+        </div> */}
 
         {canManage ? (
           <div className="toolbar-grid vehicle-filter-bar">
-            <label className="form-field">
+            {/* <label className="form-field">
               <span>Trạng thái</span>
               <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
                 <option value="">Tất cả</option>
                 <option value="PENDING">Chờ duyệt</option>
+                <option value="PENDING_CANCEL">Chờ duyệt hủy</option>
                 <option value="APPROVED">Đã duyệt</option>
                 <option value="REJECTED">Từ chối</option>
                 <option value="CANCELLED">Đã hủy</option>
@@ -717,8 +783,8 @@ export function VehicleListPage() {
                 <option value="MOTORBIKE">Xe máy</option>
                 <option value="CAR">Ô tô</option>
               </select>
-            </label>
-            <label className="form-field vehicle-filter-bar__hide-on-compact">
+            </label> */}
+            {/* <label className="form-field vehicle-filter-bar__hide-on-compact">
               <span>Biển số</span>
               <input value={filters.licensePlate} onChange={(event) => updateFilter('licensePlate', event.target.value)} placeholder="29A-12345" />
             </label>
@@ -751,7 +817,7 @@ export function VehicleListPage() {
               <button className="btn btn-ghost" type="button" onClick={() => { setFilters(emptyFilters); loadVehicles(0, emptyFilters) }}>
                 Xóa lọc
               </button>
-            </div>
+            </div> */}
           </div>
         ) : null}
 
@@ -771,10 +837,8 @@ export function VehicleListPage() {
               <thead>
                 <tr>
                   <th>Căn hộ</th>
-                  {canManage ? <th>Chủ xe</th> : null}
                   <th>Biển số</th>
                   <th>Loại xe</th>
-                  <th>Hãng / mẫu xe</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -783,10 +847,8 @@ export function VehicleListPage() {
                 {vehicles.map((vehicle) => (
                   <tr key={vehicle.vehicleId}>
                     <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
-                    {canManage ? <td>{renderOwnerCell(getVehicleOwnerId(vehicle))}</td> : null}
                     <td>{vehicle.licensePlate}</td>
                     <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
-                    <td>{vehicle.brand || '-'}</td>
                     <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
                     <td>
                       {canManage && vehicle.status === 'PENDING' ? (
