@@ -22,6 +22,18 @@ spring:
 notification:
   dispatch-delay-ms: 60000
 
+services:
+  finance-service:
+    url: http://localhost:8086
+  apartment-service:
+    url: http://localhost:8082
+
+invoice:
+  notification:
+    cron: "0 0 8 1 * *"
+    zone: Asia/Ho_Chi_Minh
+    retry-delay-ms: 1800000
+
 #   server:
 #   port: 8082
 

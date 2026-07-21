@@ -37,9 +37,9 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         List<Building> buildings = List.of(
-                Building.builder().buildingId(BUILDING_A).name("Building A").code("A").address("123 Main Street").build(),
-                Building.builder().buildingId(BUILDING_B).name("Building B").code("B").address("456 Second Street").build(),
-                Building.builder().buildingId(BUILDING_C).name("Building C").code("C").address("789 Third Street").build());
+                Building.builder().buildingId(BUILDING_A).name("Building A").code("A").address("123 Main Street").floors(2).build(),
+                Building.builder().buildingId(BUILDING_B).name("Building B").code("B").address("456 Second Street").floors(2).build(),
+                Building.builder().buildingId(BUILDING_C).name("Building C").code("C").address("789 Third Street").floors(2).build());
 
         cleanupBuildings(buildings);
         buildings.forEach(buildingRepository::save);

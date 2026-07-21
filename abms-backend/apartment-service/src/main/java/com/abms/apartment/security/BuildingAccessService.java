@@ -60,6 +60,25 @@ public class BuildingAccessService {
         }
     }
 
+    public void ensureAdmin(String authorizationHeader) {
+        Claims claims = getClaims(authorizationHeader);
+        if (!"ADMIN".equals(normalizeRole(claims.get("role", String.class)))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admin can manage buildings globally");
+        }
+    }
+
+    public void ensureCanManageBuilding(String authorizationHeader, UUID buildingId) {
+        Claims claims = getClaims(authorizationHeader);
+        String role = normalizeRole(claims.get("role", String.class));
+        if ("ADMIN".equals(role)) {
+            return;
+        }
+        if ("MANAGER".equals(role) && buildingId != null && buildingId.equals(getBuildingId(claims))) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to manage this building");
+    }
+
     private Claims getClaims(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing bearer token");

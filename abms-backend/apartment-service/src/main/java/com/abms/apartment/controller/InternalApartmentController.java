@@ -43,4 +43,10 @@ public class InternalApartmentController {
                 .anyMatch(apartment -> apartmentId.equals(apartment.getApartmentId()));
         return exists ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+
+    @GetMapping("/apartments/{apartmentId}/residents")
+    public ResponseEntity<List<ApartmentResidentResponse>> getResidentsByApartmentId(
+            @PathVariable("apartmentId") UUID apartmentId) {
+        return ResponseEntity.ok(apartmentService.getResidentsByApartmentId(null, apartmentId));
+    }
 }

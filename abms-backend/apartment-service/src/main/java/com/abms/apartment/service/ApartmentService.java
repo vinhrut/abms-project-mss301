@@ -1,5 +1,6 @@
 package com.abms.apartment.service;
 
+import com.abms.apartment.dto.BuildingRequest;
 import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
@@ -14,6 +15,12 @@ public interface ApartmentService {
     List<BuildingResponse> getAllBuildings();
 
     BuildingResponse getBuildingById(UUID buildingId);
+
+    BuildingResponse createBuilding(BuildingRequest request);
+
+    BuildingResponse updateBuilding(UUID buildingId, BuildingRequest request);
+
+    void deleteBuilding(UUID buildingId);
 
     ApartmentResponse getApartmentById(UUID apartmentId);
 

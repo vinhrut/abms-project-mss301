@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { PageIntro } from '../../../components/ui/PageIntro.jsx'
+import { APP_ROUTES } from '../../../config/navigation.js'
 import { ROLE_KEYS } from '../../../config/roles.js'
 import { apartmentService } from '../../../services/apartmentService.js'
 import { extractApiErrorMessage } from '../../../utils/apiError.js'
@@ -30,39 +32,59 @@ function formatDateRange(startDate, endDate) {
 
 export function ApartmentListPage() {
   const { auth, normalizedRole } = useAuth()
+  const [searchParams] = useSearchParams()
   const [apartments, setApartments] = useState([])
+  const [buildingInfo, setBuildingInfo] = useState(null)
   const [selectedApartment, setSelectedApartment] = useState(null)
   const [selectedApartmentResidents, setSelectedApartmentResidents] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingResidents, setLoadingResidents] = useState(false)
   const [error, setError] = useState('')
   const [confirmModal, setConfirmModal] = useState({ visible: false, residentId: null, resident: null })
+
   const managerBuildingId = auth?.buildingId || getBuildingIdFromToken(auth?.token || '')
   const isManager = normalizedRole === ROLE_KEYS.MANAGER
+  const isAdmin = normalizedRole === ROLE_KEYS.ADMIN
+  const queryBuildingId = searchParams.get('buildingId') || ''
+  const targetBuildingId = queryBuildingId || (isManager ? managerBuildingId : '')
+  const canViewRooms = Boolean(targetBuildingId) && (isAdmin || isManager)
 
   useEffect(() => {
-    const loadManagerData = async () => {
-      if (!isManager || !managerBuildingId) {
+    const loadApartments = async () => {
+      if (!canViewRooms) {
         setApartments([])
+        setBuildingInfo(null)
+        return
+      }
+
+      // Manager chỉ được xem tòa được gán, trừ khi query trùng tòa của họ.
+      if (isManager && managerBuildingId && targetBuildingId !== managerBuildingId) {
+        setApartments([])
+        setBuildingInfo(null)
+        setError('Bạn chỉ được xem căn hộ thuộc tòa nhà đang quản lý.')
         return
       }
 
       try {
         setLoading(true)
         setError('')
-        const apartmentData = await apartmentService.getApartmentsByBuildingId(managerBuildingId)
-
+        const [apartmentData, building] = await Promise.all([
+          apartmentService.getApartmentsByBuildingId(targetBuildingId),
+          apartmentService.getBuildingById(targetBuildingId).catch(() => null),
+        ])
         setApartments(Array.isArray(apartmentData) ? apartmentData : [])
+        setBuildingInfo(building)
       } catch (apiError) {
         setApartments([])
-        setError(extractApiErrorMessage(apiError, 'Không thể tải danh sách căn hộ của tòa nhà đang quản lý.'))
+        setBuildingInfo(null)
+        setError(extractApiErrorMessage(apiError, 'Không thể tải danh sách căn hộ của tòa nhà.'))
       } finally {
         setLoading(false)
       }
     }
 
-    loadManagerData()
-  }, [isManager, managerBuildingId])
+    loadApartments()
+  }, [canViewRooms, isManager, managerBuildingId, targetBuildingId])
 
   const handleViewResidents = async (apartment) => {
     setSelectedApartment(apartment)
@@ -86,26 +108,41 @@ export function ApartmentListPage() {
       <PageIntro
         eyebrow="Apartment management"
         title="Danh sách căn hộ"
-        description="Manager chỉ xem các căn hộ thuộc tòa nhà được phân công quản lý."
+        description={
+          buildingInfo
+            ? `Căn hộ thuộc ${buildingInfo.name || 'tòa nhà'} (${buildingInfo.code || targetBuildingId}).`
+            : 'Xem căn hộ theo tòa nhà được chọn từ Building Management.'
+        }
+        actions={
+          queryBuildingId ? (
+            <Link className="btn btn-secondary" to={APP_ROUTES.buildings}>
+              Quay lại tòa nhà
+            </Link>
+          ) : null
+        }
       />
 
-      {isManager ? (
+      {canViewRooms ? (
         <section className="content-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">My building</span>
-              <h3>Căn hộ thuộc tòa nhà đang quản lý</h3>
+              <span className="eyebrow">{queryBuildingId ? 'View rooms' : 'My building'}</span>
+              <h3>
+                {buildingInfo?.name
+                  ? `Căn hộ — ${buildingInfo.name}`
+                  : 'Căn hộ thuộc tòa nhà đang xem'}
+              </h3>
             </div>
-            <span className="table-note">Building ID: {managerBuildingId || '-'}</span>
+            <span className="table-note">Building ID: {targetBuildingId || '-'}</span>
           </div>
 
           {error ? <div className="alert alert-error">{error}</div> : null}
           {loading ? <div className="page-status">Đang tải danh sách căn hộ...</div> : null}
 
-          {!loading && managerBuildingId && apartments.length === 0 ? (
+          {!loading && targetBuildingId && apartments.length === 0 ? (
             <div className="empty-state">
               <h3>Chưa có căn hộ</h3>
-              <p>Tòa nhà bạn quản lý hiện chưa có căn hộ nào.</p>
+              <p>Tòa nhà này hiện chưa có căn hộ nào.</p>
             </div>
           ) : null}
 
@@ -318,10 +355,10 @@ export function ApartmentListPage() {
         <FeaturePlaceholderPage
           eyebrow="Apartment management"
           title="Apartment List"
-          description="Theo dõi căn hộ theo tòa, tầng, diện tích, trạng thái sử dụng và cư dân đang ở."
+          description="Chọn [Xem phòng] từ trang Quản lý tòa nhà để mở danh sách căn hộ theo từng tòa."
           highlights={[
-            { title: 'Apartment inventory', description: 'Danh sách căn hộ với filter theo building, floor, room number và status.' },
-            { title: 'Detail handoff', description: 'Điểm vào để mở Apartment Detail, lịch sử bảo trì và thông tin cư dân.' },
+            { title: 'View rooms từ Building', description: 'Admin/Manager vào Buildings → Xem phòng để tải căn hộ theo buildingId.' },
+            { title: 'Detail handoff', description: 'Xem cư dân theo từng căn hộ trong modal chi tiết.' },
             { title: 'Resident assignment', description: 'Sẵn sàng tích hợp flow assign/remove resident from apartment.' },
           ]}
         />

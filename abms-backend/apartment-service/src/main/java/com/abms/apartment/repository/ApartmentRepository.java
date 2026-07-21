@@ -9,4 +9,8 @@ public interface ApartmentRepository extends JpaRepository<Apartment, UUID> {
     java.util.List<Apartment> findAllByOrderByRoomNumberAsc();
 
     java.util.List<Apartment> findByBuildingIdOrderByRoomNumberAsc(UUID buildingId);
+
+    long countByBuildingId(UUID buildingId);
+
+    boolean existsByBuildingId(UUID buildingId);
 }

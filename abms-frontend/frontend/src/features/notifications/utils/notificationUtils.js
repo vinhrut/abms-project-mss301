@@ -11,7 +11,14 @@ export function canManageNotifications(role) {
 export function formatDateTime(value) {
   if (!value) return '—'
   const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }).format(parsed)
+  if (Number.isNaN(parsed.getTime())) return value
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(parsed)
 }
 
 export function apiErrorMessage(error, fallback = 'Không thể xử lý yêu cầu.') {
