@@ -398,7 +398,7 @@ Request body:
 
 ```json
 {
-  "apartmentId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1",
+  "apartmentId": "a101b202-c303-4d04-8e05-f606a707b808",
   "billingMonth": "2026-07-01",
   "readings": [
     { "serviceId": 1, "oldIndex": 100, "newIndex": 150 },
@@ -444,7 +444,7 @@ Authorization: Bearer <token>
 ```json
 {
   "invoiceId": "........",
-  "payerId": "00000000-0000-0000-0000-000000001101",
+  "payerId": "4d5e6f70-8192-4abc-d345-e6f7890a1b2c",
   "paidAmount": 265000
 }
 ```
@@ -460,8 +460,8 @@ Authorization: Bearer <token>
 ```json
 {
   "invoiceId": "........",
-  "payerId": "00000000-0000-0000-0000-000000001101",
-  "collectorId": "00000000-0000-0000-0000-000000002101",
+  "payerId": "4d5e6f70-8192-4abc-d345-e6f7890a1b2c",
+  "collectorId": "708192a3-b4c5-4def-a678-90a1b2c3d4e5",
   "paidAmount": 100000
 }
 ```
@@ -479,7 +479,7 @@ Authorization: Bearer <token>
 ```json
 {
   "invoiceId": "........",
-  "payerId": "00000000-0000-0000-0000-000000001101"
+  "payerId": "4d5e6f70-8192-4abc-d345-e6f7890a1b2c"
 }
 ```
 

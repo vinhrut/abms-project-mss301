@@ -28,9 +28,9 @@ import java.util.UUID;
 @Repository
 @RequiredArgsConstructor
 public class InvoiceNotificationDataRepository {
-    private static final UUID RESIDENT_A101 = UUID.fromString("00000000-0000-0000-0000-000000001101");
-    private static final UUID RESIDENT_A102 = UUID.fromString("00000000-0000-0000-0000-000000001102");
-    private static final UUID RESIDENT_B101 = UUID.fromString("00000000-0000-0000-0000-000000001201");
+    private static final UUID RESIDENT_A101 = UUID.fromString("4d5e6f70-8192-4abc-d345-e6f7890a1b2c");
+    private static final UUID RESIDENT_A102 = UUID.fromString("5e6f7081-92a3-4bcd-e456-f7890a1b2c3d");
+    private static final UUID RESIDENT_B101 = UUID.fromString("6f708192-a3b4-4cde-f567-890a1b2c3d4e");
 
     private final FinanceServiceClient financeServiceClient;
     private final ApartmentServiceClient apartmentServiceClient;

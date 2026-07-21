@@ -31,14 +31,14 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    private static final UUID BUILDING_A = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private static final UUID BUILDING_B = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
-    private static final UUID ADMIN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    private static final UUID MANAGER_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
-    private static final UUID RESIDENT_A101_ID = UUID.fromString("00000000-0000-0000-0000-000000001101");
-    private static final UUID RESIDENT_A102_ID = UUID.fromString("00000000-0000-0000-0000-000000001102");
+    private static final UUID BUILDING_A = UUID.fromString("7f3a9c2e-1b4d-4e8f-a6c0-92d5e8b1f4a3");
+    private static final UUID BUILDING_B = UUID.fromString("8e4b0d3f-2c5e-4f9a-b7d1-a3e6f9c2d5b4");
+    private static final UUID ADMIN_ID = UUID.fromString("1a2b3c4d-5e6f-4789-a012-b3c4d5e6f789");
+    private static final UUID MANAGER_A_ID = UUID.fromString("2b3c4d5e-6f70-489a-b123-c4d5e6f7890a");
+    private static final UUID RESIDENT_A101_ID = UUID.fromString("4d5e6f70-8192-4abc-d345-e6f7890a1b2c");
+    private static final UUID RESIDENT_A102_ID = UUID.fromString("5e6f7081-92a3-4bcd-e456-f7890a1b2c3d");
 
-    private static final UUID RESIDENT_B101_ID = UUID.fromString("00000000-0000-0000-0000-000000001201");
+    private static final UUID RESIDENT_B101_ID = UUID.fromString("6f708192-a3b4-4cde-f567-890a1b2c3d4e");
 
     private final NotificationRepository notificationRepository;
     private final NotificationRecipientRepository recipientRepository;

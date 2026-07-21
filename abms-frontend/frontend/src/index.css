@@ -429,9 +429,11 @@ a {
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .app-sidebar {
@@ -441,9 +443,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  position: sticky;
-  top: 0;
-  min-height: 100vh;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .brand-mark {
@@ -481,6 +484,8 @@ a {
 .sidebar-sections {
   display: grid;
   gap: 20px;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar-group {
@@ -518,6 +523,9 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .topbar {
@@ -742,6 +750,10 @@ a {
 
 .page-content {
   padding: 32px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .page-content:has(.vehicle-page) {
@@ -1690,9 +1702,22 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
   .app-sidebar {
-    position: relative;
-    min-height: auto;
+    height: auto;
+    overflow: visible;
+  }
+
+  .main-shell,
+  .page-content {
+    height: auto;
+    overflow: visible;
   }
 
   .hero-panel,

@@ -46,9 +46,9 @@ public class MaintenanceServiceImpl implements MaintenanceService {
      * Used only when auth userId and apartment residence userId are out of sync.
      */
     private static final Map<String, UUID> SEED_RESIDENT_USER_IDS_BY_EMAIL = Map.of(
-            "resident.a101@abms.local", UUID.fromString("00000000-0000-0000-0000-000000001101"),
-            "resident.a102@abms.local", UUID.fromString("00000000-0000-0000-0000-000000001102"),
-            "resident.b101@abms.local", UUID.fromString("00000000-0000-0000-0000-000000001201"));
+            "resident.a101@abms.local", UUID.fromString("4d5e6f70-8192-4abc-d345-e6f7890a1b2c"),
+            "resident.a102@abms.local", UUID.fromString("5e6f7081-92a3-4bcd-e456-f7890a1b2c3d"),
+            "resident.b101@abms.local", UUID.fromString("6f708192-a3b4-4cde-f567-890a1b2c3d4e"));
 
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final MaintenanceHistoryRepository maintenanceHistoryRepository;
