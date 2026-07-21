@@ -24,16 +24,27 @@ function normalizeCollection(data) {
 }
 
 function getBuildingLabel(building) {
-  const name = building?.name || building?.buildingName || 'Tòa nhà'
+  const name = building?.name || building?.buildingName || building?.code || 'Tòa nhà'
   const code = building?.code ? ` (${building.code})` : ''
-  const id = building?.buildingId ? ` - ${building.buildingId}` : ''
-  return `${name}${code}${id}`
+  return name === building?.code ? name : `${name}${code}`
 }
 
 function getApartmentLabel(apartment) {
-  const roomNumber = apartment?.roomNumber || apartment?.apartmentNumber || apartment?.code || 'Căn hộ'
-  const id = apartment?.apartmentId ? ` - ${apartment.apartmentId}` : ''
-  return `${roomNumber}${id}`
+  return apartment?.roomNumber || apartment?.apartmentNumber || apartment?.code || apartment?.name || 'Căn hộ'
+}
+
+const roleLabelMap = {
+  [ROLE_KEYS.ADMIN]: 'Quản trị viên',
+  [ROLE_KEYS.MANAGER]: 'Quản lý',
+  [ROLE_KEYS.RESIDENT]: 'Cư dân',
+  [ROLE_KEYS.STAFF]: 'Nhân viên',
+  [ROLE_KEYS.TECHNICIAN]: 'Kỹ thuật viên',
+}
+
+const statusLabelMap = {
+  ACTIVE: 'Đang hoạt động',
+  LOCKED: 'Đã khóa',
+  PENDING: 'Chờ xử lý',
 }
 
 const initialCreateState = {
@@ -84,6 +95,23 @@ export function UserManagementPage() {
   }, [auth?.buildingId, auth?.userId, users])
 
   const visibleUsers = useMemo(() => users, [users])
+
+  const buildingById = useMemo(
+    () => new Map(buildings.map((building) => [building.buildingId, building]).filter(([buildingId]) => buildingId)),
+    [buildings],
+  )
+
+  const managerBuildingLabel = useMemo(() => {
+    const found = buildingById.get(managerBuildingId)
+    if (found) return getBuildingLabel(found)
+    return managerBuildingId ? 'Tòa nhà được phân quyền' : ''
+  }, [buildingById, managerBuildingId])
+
+  const getUserBuildingDisplay = (user) => {
+    if (!user?.buildingId) return '-'
+    const found = buildingById.get(user.buildingId)
+    return found ? getBuildingLabel(found) : 'Tòa nhà được phân quyền'
+  }
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -224,7 +252,7 @@ export function UserManagementPage() {
           relationship: formData.roleName === ROLE_KEYS.RESIDENT ? formData.relationship : null,
           residenceType: formData.roleName === ROLE_KEYS.RESIDENT ? formData.residenceType : null,
         })
-        setMessage(`Đã cấp tài khoản ${formData.roleName.toLowerCase()} thành công.`)
+        setMessage(`Đã cấp tài khoản ${roleLabelMap[formData.roleName] || formData.roleName} thành công.`)
       }
 
       setFormData({
@@ -242,7 +270,7 @@ export function UserManagementPage() {
   const buildingPlaceholder = loadingBuildings
     ? 'Đang tải tòa nhà...'
     : buildingLoadError
-      ? 'Không tải được tòa nhà'
+      ? 'Tòa nhà'
       : buildings.length === 0
         ? 'Không có tòa nhà'
         : 'Chọn tòa nhà'
@@ -250,7 +278,7 @@ export function UserManagementPage() {
   const apartmentPlaceholder = loadingApartments
     ? 'Đang tải căn hộ...'
     : apartmentLoadError
-      ? 'Không tải được căn hộ'
+      ? 'Căn hộ'
       : apartments.length === 0
         ? 'Không có căn hộ trong tòa nhà'
         : 'Chọn căn hộ'
@@ -275,30 +303,30 @@ export function UserManagementPage() {
   return (
     <div className="page-stack">
       <PageIntro
-        eyebrow="User management"
+        eyebrow="Quản lý tài khoản"
         title={isAdmin ? 'Cấp tài khoản manager' : 'Cấp và quản lý tài khoản nội bộ'}
         description={
           isAdmin
-            ? 'Admin cấp tài khoản manager theo từng tòa nhà và có quyền lock/unlock manager.'
-            : 'Manager cấp tài khoản resident, staff, technician trong phạm vi tòa nhà của mình và quản lý trạng thái khóa tài khoản.'
+            ? 'Admin cấp tài khoản quản lý theo từng tòa nhà và có quyền khóa/mở khóa tài khoản quản lý.'
+            : 'Manager cấp tài khoản cư dân, nhân viên, kỹ thuật viên trong phạm vi tòa nhà của mình và quản lý trạng thái khóa tài khoản.'
         }
       />
 
       <section className="content-card">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">Account provisioning</span>
-            <h3>{isAdmin ? 'Tạo manager mới' : 'Tạo resident / staff / technician'}</h3>
+            <span className="eyebrow">Cấp tài khoản</span>
+            <h3>{isAdmin ? 'Tạo quản lý mới' : 'Tạo cư dân / nhân viên / kỹ thuật viên'}</h3>
           </div>
         </div>
 
         <form className="form-grid form-grid--two-columns" onSubmit={handleSubmit}>
           {!isAdmin ? (
             <label className="form-field">
-              <span>Role *</span>
+              <span>Vai trò *</span>
               <select name="roleName" value={formData.roleName} onChange={handleChange}>
                 {roleOptionsForManager.map((role) => (
-                  <option key={role} value={role}>{role}</option>
+                  <option key={role} value={role}>{roleLabelMap[role] || role}</option>
                 ))}
               </select>
             </label>
@@ -306,7 +334,7 @@ export function UserManagementPage() {
 
           {isAdmin ? (
             <label className="form-field form-field--full">
-              <span>Building *</span>
+              <span>Tòa nhà *</span>
               <select name="buildingId" value={formData.buildingId} onChange={handleChange}>
                 <option value="">{buildingPlaceholder}</option>
                 {buildings.map((building) => (
@@ -320,7 +348,7 @@ export function UserManagementPage() {
           ) : null}
 
           <label className="form-field">
-            <span>Full name *</span>
+            <span>Họ tên *</span>
             <input name="fullName" value={formData.fullName} onChange={handleChange} />
           </label>
 
@@ -330,24 +358,24 @@ export function UserManagementPage() {
           </label>
 
           <label className="form-field">
-            <span>Password *</span>
+            <span>Mật khẩu *</span>
             <input type="password" name="password" value={formData.password} onChange={handleChange} />
           </label>
 
           <label className="form-field">
-            <span>Phone</span>
+            <span>Số điện thoại</span>
             <input name="phone" value={formData.phone} onChange={handleChange} />
           </label>
 
           <label className="form-field form-field--full">
-            <span>ID Card</span>
+            <span>CCCD/CMND</span>
             <input name="idCard" value={formData.idCard} onChange={handleChange} />
           </label>
 
           {isManager && formData.roleName === ROLE_KEYS.RESIDENT ? (
             <>
               <label className="form-field form-field--full">
-                <span>Apartment *</span>
+                <span>Căn hộ *</span>
                 <select
                   name="apartmentId"
                   value={formData.apartmentId}
@@ -361,24 +389,24 @@ export function UserManagementPage() {
                     </option>
                   ))}
                 </select>
-                {managerBuildingId ? <small>Tòa nhà quản lý: {managerBuildingId}</small> : null}
+                {managerBuildingLabel ? <small>Tòa nhà quản lý: {managerBuildingLabel}</small> : null}
                 {apartmentLoadError ? <small className="field-error">{apartmentLoadError}</small> : null}
               </label>
 
               <label className="form-field">
-                <span>Relationship</span>
+                <span>Quan hệ với căn hộ</span>
                 <select name="relationship" value={formData.relationship} onChange={handleChange}>
-                  <option value="OWNER">Owner</option>
-                  <option value="TENANT">Tenant</option>
-                  <option value="FAMILY">Family</option>
+                  <option value="OWNER">Chủ hộ</option>
+                  <option value="TENANT">Người thuê</option>
+                  <option value="FAMILY">Người thân</option>
                 </select>
               </label>
 
               <label className="form-field">
-                <span>Residence type</span>
+                <span>Loại cư trú</span>
                 <select name="residenceType" value={formData.residenceType} onChange={handleChange}>
-                  <option value="PERMANENT">Permanent</option>
-                  <option value="TEMPORARY">Temporary</option>
+                  <option value="PERMANENT">Thường trú</option>
+                  <option value="TEMPORARY">Tạm trú</option>
                 </select>
               </label>
             </>
@@ -398,7 +426,7 @@ export function UserManagementPage() {
       <section className="content-card">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">User directory</span>
+            <span className="eyebrow">Danh bạ tài khoản</span>
             <h3>Danh sách tài khoản có thể quản lý</h3>
           </div>
         </div>
@@ -410,14 +438,14 @@ export function UserManagementPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Full name</th>
+                  <th>Họ tên</th>
                   <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Building</th>
-                  <th>Phone</th>
-                  <th>Locked at</th>
-                  <th>Actions</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Tòa nhà</th>
+                  <th>Số điện thoại</th>
+                  <th>Thời điểm khóa</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,15 +453,15 @@ export function UserManagementPage() {
                   <tr key={user.userId}>
                     <td>{user.fullName}</td>
                     <td>{user.email}</td>
-                    <td>{user.roleName}</td>
-                    <td><span className={getStatusClass(user.status)}>{user.status}</span></td>
-                    <td>{user.buildingId || '-'}</td>
+                    <td>{roleLabelMap[user.roleName] || user.roleName}</td>
+                    <td><span className={getStatusClass(user.status)}>{statusLabelMap[user.status] || user.status}</span></td>
+                    <td>{getUserBuildingDisplay(user)}</td>
                     <td>{user.phone || '-'}</td>
                     <td>{user.lockedAt || '-'}</td>
                     <td>
                       {user.userId !== auth?.userId ? (
                         <button type="button" className={user.status === 'LOCKED' ? 'btn btn-success' : 'btn btn-danger'} onClick={() => handleToggleLock(user)}>
-                          {user.status === 'LOCKED' ? 'Unlock' : 'Lock'}
+                          {user.status === 'LOCKED' ? 'Mở khóa' : 'Khóa'}
                         </button>
                       ) : (
                         <span className="table-note">Tài khoản hiện tại</span>
@@ -449,7 +477,7 @@ export function UserManagementPage() {
         {!loading && visibleUsers.length === 0 ? (
           <div className="empty-state">
             <h3>Chưa có dữ liệu tài khoản</h3>
-            <p>Danh sách user sẽ xuất hiện ở đây sau khi backend trả dữ liệu.</p>
+            <p>Danh sách tài khoản sẽ xuất hiện ở đây sau khi hệ thống trả dữ liệu.</p>
           </div>
         ) : null}
       </section>

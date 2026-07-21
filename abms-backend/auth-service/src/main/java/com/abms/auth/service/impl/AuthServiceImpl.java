@@ -7,8 +7,6 @@ import com.abms.auth.dto.AuthResponse;
 import com.abms.auth.dto.ChangePasswordRequest;
 import com.abms.auth.dto.LoginRequest;
 import com.abms.auth.dto.RegisterRequest;
-import com.abms.auth.dto.ResidentRegistrationRequest;
-import com.abms.auth.entity.Role;
 import com.abms.auth.entity.User;
 import com.abms.auth.repository.RoleRepository;
 import com.abms.auth.repository.UserRepository;

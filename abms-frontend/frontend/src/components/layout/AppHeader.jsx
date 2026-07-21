@@ -44,13 +44,17 @@ export function AppHeader({ pageTitle, pageDescription, auth, roleLabel, onLogou
 
   return (
     <header className="topbar app-topbar">
-      <div>
-        <span className="eyebrow">Apartment Building Management</span>
+      <div className="topbar-title">
+        <span className="eyebrow">Hệ thống quản lý tòa nhà</span>
         <h2>{pageTitle}</h2>
         <p className="topbar-description">{pageDescription}</p>
       </div>
 
       <div className="topbar-actions">
+        <div className="topbar-quick-links">
+          <Link to="/app/notifications" className="btn btn-ghost">Thông báo</Link>
+          <Link to="/app/profile" className="btn btn-ghost">Hồ sơ</Link>
+        </div>
         <div className="user-menu" ref={menuRef}>
           <button
             type="button"
@@ -79,6 +83,7 @@ export function AppHeader({ pageTitle, pageDescription, auth, roleLabel, onLogou
                 </div>
               </div>
 
+        <button type="button" className="btn btn-secondary" onClick={onLogout}>Đăng xuất</button>
               <Link
                 to={APP_ROUTES.notifications}
                 className="user-menu__item"

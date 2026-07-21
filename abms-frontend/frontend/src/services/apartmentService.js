@@ -43,6 +43,20 @@ export const apartmentService = {
     return data
   },
 
+  async createBuilding(payload) {
+    const { data } = await apiClient.post('/api/v1/buildings', payload)
+    return data
+  },
+
+  async updateBuilding(buildingId, payload) {
+    const { data } = await apiClient.put(`/api/v1/buildings/${buildingId}`, payload)
+    return data
+  },
+
+  async deleteBuilding(buildingId) {
+    await apiClient.delete(`/api/v1/buildings/${buildingId}`)
+  },
+
   async getBuildingResidentsByBuildingId(buildingId) {
     if (!buildingId) {
       return []

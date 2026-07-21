@@ -4,7 +4,6 @@ import com.abms.vehicle.client.ApartmentClient;
 import com.abms.vehicle.constant.RoleNames;
 import com.abms.vehicle.constant.VehicleStatus;
 import com.abms.vehicle.constant.VehicleType;
-import com.abms.vehicle.dto.ApartmentResidentResponse;
 import com.abms.vehicle.dto.ApartmentResponse;
 import com.abms.vehicle.dto.VehicleRequest;
 import com.abms.vehicle.dto.VehicleResponse;
@@ -208,8 +207,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private void validateResidentResidence(UUID ownerId, UUID apartmentId) {
-        ApartmentResidentResponse residence = apartmentClient.getActiveResidenceByUserId(ownerId);
-        if (residence == null || !apartmentId.equals(residence.getApartmentId())) {
+        if (!apartmentClient.hasActiveResidence(apartmentId, ownerId)) {
             throw new ResourceNotFoundException("Resident does not belong to apartment: " + apartmentId);
         }
     }

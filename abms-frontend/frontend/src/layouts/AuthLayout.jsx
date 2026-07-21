@@ -6,24 +6,23 @@ export function AuthLayout() {
       <div className="auth-shell__content">
         <section className="auth-shell__brand">
           <span className="eyebrow">ABMS</span>
-          <h1>Apartment Building Management System</h1>
+          <h1>Hệ thống quản lý tòa nhà</h1>
           <p>
-            Giao diện quản lý căn hộ theo hướng đơn giản, rõ ràng và dễ mở rộng cho
-            kiến trúc microservice.
+            Giao diện quản lý căn hộ, cư dân và vận hành tòa nhà theo từng vai trò.
           </p>
 
           <div className="feature-points">
             <div>
-              <strong>Role-based workspace</strong>
+              <strong>Không gian theo vai trò</strong>
               <span>Điều hướng khác nhau cho admin, manager, staff, technician và resident.</span>
             </div>
             <div>
-              <strong>Operations-ready base UI</strong>
-              <span>Khung sẵn cho building, apartment, billing, maintenance, notification và reports.</span>
+              <strong>Quản lý vận hành rõ ràng</strong>
+              <span>Các phần tòa nhà, căn hộ, hóa đơn, bảo trì, xe và thông báo được tách gọn.</span>
             </div>
             <div>
-              <strong>Maintainable UI</strong>
-              <span>Cấu trúc tách domain rõ ràng để mở rộng thêm service sau này.</span>
+              <strong>Dễ sử dụng</strong>
+              <span>Thông tin quan trọng được trình bày ngắn gọn, hạn chế hiển thị dữ liệu kỹ thuật.</span>
             </div>
           </div>
         </section>

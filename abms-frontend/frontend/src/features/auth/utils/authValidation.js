@@ -4,13 +4,13 @@ export function validateLoginForm(values) {
   const errors = {}
 
   if (!values.email?.trim()) {
-    errors.email = 'The * field is required.'
+    errors.email = 'Vui lòng nhập email.'
   } else if (!isValidEmail(values.email)) {
     errors.email = 'Email không đúng định dạng.'
   }
 
   if (!values.password?.trim()) {
-    errors.password = 'The * field is required.'
+    errors.password = 'Vui lòng nhập mật khẩu.'
   }
 
   return errors
@@ -20,7 +20,7 @@ export function validateRegisterForm(values) {
   const errors = validateLoginForm(values)
 
   if (!values.fullName?.trim()) {
-    errors.fullName = 'The * field is required.'
+    errors.fullName = 'Vui lòng nhập họ tên.'
   }
 
   if (values.password?.trim() && values.password.trim().length < 8) {
@@ -36,7 +36,7 @@ export function validateRegisterForm(values) {
   }
 
   if (!values.apartmentId?.trim()) {
-    errors.apartmentId = 'The * field is required.'
+    errors.apartmentId = 'Vui lòng chọn căn hộ.'
   }
 
   return errors

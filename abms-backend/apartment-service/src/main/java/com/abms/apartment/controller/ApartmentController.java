@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +27,7 @@ public class ApartmentController {
 
     private final ApartmentService apartmentService;
     private final BuildingAccessService buildingAccessService;
+    private final ApartmentResidentRepository apartmentResidentRepository;
 
     @GetMapping
     public ResponseEntity<List<ApartmentResponse>> getApartments(
@@ -47,9 +49,12 @@ public class ApartmentController {
     @GetMapping("/{apartmentId}")
     public ResponseEntity<ApartmentResponse> getApartmentById(
             @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "X-User-Id", required = false) UUID userId,
             @PathVariable("apartmentId") UUID apartmentId) {
         ApartmentResponse apartment = apartmentService.getApartmentById(apartmentId);
-        buildingAccessService.ensureCanViewApartments(authorizationHeader, apartment.getBuildingId());
+        boolean activeResident = userId != null
+                && apartmentResidentRepository.existsByApartmentIdAndUserIdAndStatus(apartmentId, userId, "ACTIVE");
+        buildingAccessService.ensureCanViewApartmentDetail(authorizationHeader, apartmentId, apartment.getBuildingId(), activeResident);
         return ResponseEntity.ok(apartment);
     }
 

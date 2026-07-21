@@ -32,4 +32,7 @@ public class Building {
 
     @Column(name = "address", nullable = false)
     private String address;
+
+    @Column(name = "floors")
+    private Integer floors;
 }

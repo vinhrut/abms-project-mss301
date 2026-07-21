@@ -27,7 +27,7 @@ public class ApartmentClient {
     public ApartmentResponse getApartmentById(UUID apartmentId) {
         try {
             ResponseEntity<ApartmentResponse> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/apartments/" + apartmentId,
+                    apartmentServiceUrl + "/internal/apartments/" + apartmentId,
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {
@@ -44,7 +44,7 @@ public class ApartmentClient {
     public ApartmentResidentResponse getActiveResidenceByUserId(UUID userId) {
         try {
             ResponseEntity<ApartmentResidentResponse> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/apartments/residents/user/" + userId + "/active",
+                    apartmentServiceUrl + "/internal/apartments/residents/user/" + userId + "/active",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {
@@ -58,10 +58,26 @@ public class ApartmentClient {
         }
     }
 
+    public boolean hasActiveResidence(UUID apartmentId, UUID userId) {
+        try {
+            restTemplate.exchange(
+                    apartmentServiceUrl + "/internal/apartments/" + apartmentId + "/residents/" + userId + "/active",
+                    HttpMethod.GET,
+                    null,
+                    Void.class);
+            return true;
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return false;
+            }
+            throw ex;
+        }
+    }
+
     public List<ApartmentResponse> getApartmentsByBuildingId(UUID buildingId) {
         try {
             ResponseEntity<List<ApartmentResponse>> response = restTemplate.exchange(
-                    apartmentServiceUrl + "/api/v1/buildings/" + buildingId + "/apartments",
+                    apartmentServiceUrl + "/internal/buildings/" + buildingId + "/apartments",
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {

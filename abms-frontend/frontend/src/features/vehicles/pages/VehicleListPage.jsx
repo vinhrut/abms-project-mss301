@@ -23,8 +23,8 @@ function getApartmentId(apartment) {
 }
 
 function getApartmentDisplayName(apartment) {
-  if (typeof apartment === 'string') return apartment
-  return apartment?.roomNumber || apartment?.apartmentNumber || apartment?.code || apartment?.name || 'Căn hộ'
+  if (typeof apartment === 'string') return 'Căn hộ chưa xác định'
+  return apartment?.roomNumber || apartment?.apartmentNumber || apartment?.code || apartment?.name || 'Căn hộ chưa xác định'
 }
 
 function getVehicleApartmentId(vehicle) {
@@ -37,7 +37,7 @@ function getVehicleOwnerId(vehicle) {
 
 function buildFallbackApartmentsFromVehicles(vehicleItems) {
   const apartmentIds = [...new Set(vehicleItems.map(getVehicleApartmentId).filter(Boolean))]
-  return apartmentIds.map((apartmentId) => ({ apartmentId, roomNumber: apartmentId }))
+  return apartmentIds.map((apartmentId) => ({ apartmentId, roomNumber: 'Căn hộ chưa xác định' }))
 }
 
 function mergeApartments(currentApartments, incomingApartments) {
@@ -60,6 +60,19 @@ function getResidentLabel(user) {
   if (!user) return 'Không rõ cư dân'
   const name = user.fullName ? ` - ${user.fullName}` : ''
   return `${user.email || user.userId}${name}`
+}
+
+const statusLabelMap = {
+  PENDING: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Từ chối',
+  CANCELLED: 'Đã hủy',
+  INACTIVE: 'Không hoạt động',
+}
+
+const vehicleTypeLabelMap = {
+  MOTORBIKE: 'Xe máy',
+  CAR: 'Ô tô',
 }
 
 const statusClassMap = {
@@ -269,8 +282,7 @@ export function VehicleListPage() {
     const apartment = apartmentById.get(apartmentId)
     return (
       <div>
-        <strong>{apartment ? getApartmentDisplayName(apartment) : apartmentId || 'Căn hộ'}</strong>
-        {apartment && getApartmentDisplayName(apartment) !== apartmentId ? <small>{apartmentId}</small> : null}
+        <strong>{apartment ? getApartmentDisplayName(apartment) : 'Căn hộ chưa xác định'}</strong>
       </div>
     )
   }
@@ -446,10 +458,10 @@ export function VehicleListPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="page-header-card">
+    <div className="page-stack vehicle-page">
+      <section className="page-header-card vehicle-page__header">
         <div>
-          <span className="eyebrow">Vehicle management</span>
+          <span className="eyebrow">Quản lý phương tiện</span>
           <h1>{canManage ? 'Quản lý phương tiện' : 'Phương tiện của tôi'}</h1>
           <p>
             {canManage
@@ -463,9 +475,9 @@ export function VehicleListPage() {
         <section className="content-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">1. Approved vehicles</span>
+              <span className="eyebrow">1. Xe đã duyệt</span>
               <h2>Xe hiện tại của tôi</h2>
-              <p>Chỉ hiển thị các phương tiện đã được manager duyệt và đang được tính là xe hợp lệ của bạn.</p>
+              <p>Chỉ hiển thị các phương tiện đã được quản lý duyệt và đang được tính là xe hợp lệ của bạn.</p>
             </div>
           </div>
 
@@ -486,7 +498,7 @@ export function VehicleListPage() {
           {!loading && approvedVehicles.length === 0 ? (
             <div className="empty-state">
               <h3>Chưa có xe nào được duyệt</h3>
-              <p>Khi manager approve đơn đăng ký, xe của bạn sẽ xuất hiện ở khu vực này.</p>
+              <p>Khi quản lý duyệt đơn đăng ký, xe của bạn sẽ xuất hiện ở khu vực này.</p>
             </div>
           ) : null}
 
@@ -495,11 +507,11 @@ export function VehicleListPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Apartment</th>
-                    <th>License Plate</th>
-                    <th>Type</th>
-                    <th>Brand</th>
-                    <th>Status</th>
+                    <th>Căn hộ</th>
+                    <th>Biển số</th>
+                    <th>Loại xe</th>
+                    <th>Hãng / mẫu xe</th>
+                    <th>Trạng thái</th>
                     <th>Hủy đăng ký</th>
                   </tr>
                 </thead>
@@ -508,9 +520,9 @@ export function VehicleListPage() {
                     <tr key={vehicle.vehicleId}>
                       <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
                       <td>{vehicle.licensePlate}</td>
-                      <td>{vehicle.type}</td>
+                      <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
                       <td>{vehicle.brand || '-'}</td>
-                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{vehicle.status}</span></td>
+                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
                       <td>
                         <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>
                           Gửi đơn hủy đăng ký
@@ -526,36 +538,20 @@ export function VehicleListPage() {
       ) : null}
 
       {isResident ? (
-        <section className="content-card">
+        <section className="content-card vehicle-register-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">2. Submit request</span>
-              <h2>{editingVehicleId ? 'Chỉnh sửa đơn đăng ký xe đang chờ duyệt' : 'Gửi đơn đăng ký xe / hủy đăng ký xe'}</h2>
+              <span className="eyebrow">Đăng ký phương tiện</span>
+              <h2>{editingVehicleId ? 'Chỉnh sửa đơn đăng ký xe' : 'Đăng ký phương tiện mới'}</h2>
               <p>
-                Dùng form bên dưới để gửi đơn đăng ký xe mới. Nếu muốn hủy xe đã được duyệt, bấm nút
-                “Gửi đơn hủy đăng ký” tại phần Xe hiện tại của tôi.
+                Vui lòng điền chính xác thông tin phương tiện để Ban Quản Lý phê duyệt.
               </p>
             </div>
           </div>
 
-          <div className="info-grid">
-            <article className="info-card">
-              <strong>Căn hộ của tôi</strong>
-              <p>{lookupLoading ? 'Đang tải...' : `${apartments.length} căn hộ`}</p>
-            </article>
-            <article className="info-card">
-              <strong>Đơn chờ duyệt</strong>
-              <p>{totalPending}</p>
-            </article>
-            <article className="info-card">
-              <strong>Có thể chỉnh sửa</strong>
-              <p>{hasPendingRequest ? 'Có đơn PENDING' : 'Không có đơn PENDING'}</p>
-            </article>
-          </div>
-
-          <form className="form-grid form-grid--two-columns" onSubmit={handleSubmitVehicleForm}>
-            <label className="form-field">
-              <span>Căn hộ *</span>
+          <form className="vehicle-register-form" onSubmit={handleSubmitVehicleForm}>
+            <label className="form-field vehicle-form-field">
+              <span>Chọn căn hộ</span>
               <select value={vehicleForm.apartmentId} onChange={(event) => updateVehicleForm('apartmentId', event.target.value)} disabled={lookupLoading}>
                 <option value="">{lookupLoading ? 'Đang tải căn hộ...' : 'Chọn căn hộ của bạn'}</option>
                 {apartments.map((apartment) => (
@@ -567,38 +563,49 @@ export function VehicleListPage() {
               {formErrors.apartmentId ? <small className="field-error">{formErrors.apartmentId}</small> : <small>Danh sách này lấy từ các căn hộ đang gắn với tài khoản của bạn.</small>}
             </label>
 
-            <article className="info-card">
-              <strong>Chủ xe</strong>
-              <p>{auth?.email || auth?.userId || 'Tài khoản hiện tại'}</p>
-            </article>
-
-            <label className="form-field">
-              <span>Biển số *</span>
+            <label className="form-field vehicle-form-field">
+              <span>Biển số xe</span>
               <input value={vehicleForm.licensePlate} onChange={(event) => updateVehicleForm('licensePlate', event.target.value)} placeholder="59A-12345" />
               {formErrors.licensePlate ? <small className="field-error">{formErrors.licensePlate}</small> : <small>Ví dụ: 59A-12345, 30G1-67890.</small>}
             </label>
 
-            <label className="form-field">
-              <span>Loại xe *</span>
-              <select value={vehicleForm.type} onChange={(event) => updateVehicleForm('type', event.target.value)}>
-                <option value="MOTORBIKE">Motorbike</option>
-                <option value="CAR">Car</option>
-              </select>
+            <label className="form-field vehicle-form-field vehicle-form-field--full">
+              <span>Loại phương tiện</span>
+              <div className="vehicle-type-options">
+                <button
+                  type="button"
+                  className={`vehicle-type-option ${vehicleForm.type === 'MOTORBIKE' ? 'vehicle-type-option--active' : ''}`}
+                  onClick={() => updateVehicleForm('type', 'MOTORBIKE')}
+                >
+                  <span className="vehicle-radio-dot" />
+                  <span>🏍️</span>
+                  <strong>Xe máy</strong>
+                </button>
+                <button
+                  type="button"
+                  className={`vehicle-type-option ${vehicleForm.type === 'CAR' ? 'vehicle-type-option--active' : ''}`}
+                  onClick={() => updateVehicleForm('type', 'CAR')}
+                >
+                  <span className="vehicle-radio-dot" />
+                  <span>🚗</span>
+                  <strong>Ô tô</strong>
+                </button>
+              </div>
               {formErrors.type ? <small className="field-error">{formErrors.type}</small> : null}
             </label>
 
-            <label className="form-field form-field--full">
-              <span>Brand / Model</span>
+            <label className="form-field vehicle-form-field vehicle-form-field--full">
+              <span>Hãng / mẫu xe</span>
               <input value={vehicleForm.brand} onChange={(event) => updateVehicleForm('brand', event.target.value)} placeholder="Honda, Toyota..." />
               <small>Không bắt buộc. Có thể nhập hãng hoặc model xe để manager dễ nhận diện.</small>
             </label>
 
-            <div className="form-actions form-field--full">
+            <div className="vehicle-register-actions">
+              <button className="btn btn-ghost" type="button" onClick={resetVehicleForm}>
+                {editingVehicleId ? 'Hủy chỉnh sửa' : 'Hủy'}
+              </button>
               <button className="btn btn-primary" type="submit" disabled={formSubmitting || apartments.length === 0}>
                 {formSubmitting ? 'Đang lưu...' : editingVehicleId ? 'Lưu chỉnh sửa' : 'Gửi đơn đăng ký'}
-              </button>
-              <button className="btn btn-ghost" type="button" onClick={resetVehicleForm}>
-                {editingVehicleId ? 'Hủy chỉnh sửa' : 'Xóa form'}
               </button>
             </div>
           </form>
@@ -612,9 +619,9 @@ export function VehicleListPage() {
         <section className="content-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">3. Submitted requests</span>
+              <span className="eyebrow">3. Đơn đã gửi</span>
               <h2>Các đơn đã gửi</h2>
-              <p>Resident chỉ được chỉnh sửa hoặc hủy đơn khi đơn vẫn ở trạng thái PENDING, chưa được manager approve hoặc reject.</p>
+              <p>Cư dân chỉ được chỉnh sửa hoặc hủy đơn khi đơn vẫn ở trạng thái chờ duyệt, chưa được quản lý xử lý.</p>
             </div>
           </div>
 
@@ -630,12 +637,12 @@ export function VehicleListPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Apartment</th>
-                    <th>License Plate</th>
-                    <th>Type</th>
-                    <th>Brand</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Căn hộ</th>
+                    <th>Biển số</th>
+                    <th>Loại xe</th>
+                    <th>Hãng / mẫu xe</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -643,9 +650,9 @@ export function VehicleListPage() {
                     <tr key={vehicle.vehicleId}>
                       <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
                       <td>{vehicle.licensePlate}</td>
-                      <td>{vehicle.type}</td>
+                      <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
                       <td>{vehicle.brand || '-'}</td>
-                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{vehicle.status}</span></td>
+                      <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
                       <td>
                         {vehicle.status === 'PENDING' ? (
                           <div className="table-actions">
@@ -653,7 +660,7 @@ export function VehicleListPage() {
                             <button className="btn btn-danger" type="button" onClick={() => handleCancel(vehicle.vehicleId)}>Hủy đơn</button>
                           </div>
                         ) : (
-                          <span className="table-note">Manager đã xử lý, không thể chỉnh sửa</span>
+                          <span className="table-note">Quản lý đã xử lý, không thể chỉnh sửa</span>
                         )}
                       </td>
                     </tr>
@@ -666,7 +673,19 @@ export function VehicleListPage() {
       ) : null}
 
       {!isResident ? (
-      <section className="content-card">
+      <section className="content-card vehicle-management-panel">
+        <div className="vehicle-management-header">
+          <div>
+            <span className="eyebrow">Vehicle management</span>
+            <h2>Quản lý phương tiện</h2>
+          </div>
+          {canManage ? (
+            <label className="vehicle-search-box">
+              <span>🔎</span>
+              <input value={filters.licensePlate} onChange={(event) => updateFilter('licensePlate', event.target.value)} placeholder="Tìm biển số/căn hộ..." />
+            </label>
+          ) : null}
+        </div>
         <div className="info-grid">
           <article className="info-card">
             <strong>{canManage ? 'Đơn chờ duyệt' : 'Tổng xe của tôi'}</strong>
@@ -674,33 +693,33 @@ export function VehicleListPage() {
           </article>
           <article className="info-card">
             <strong>Người dùng</strong>
-            <p>{auth?.email || auth?.userId || 'Unknown'}</p>
+            <p>{auth?.email || auth?.userId || 'Tài khoản hiện tại'}</p>
           </article>
         </div>
 
         {canManage ? (
-          <div className="toolbar-grid">
+          <div className="toolbar-grid vehicle-filter-bar">
             <label className="form-field">
-              <span>Status</span>
+              <span>Trạng thái</span>
               <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
-                <option value="">All</option>
-                <option value="PENDING">PENDING</option>
-                <option value="APPROVED">APPROVED</option>
-                <option value="REJECTED">REJECTED</option>
-                <option value="CANCELLED">CANCELLED</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <option value="">Tất cả</option>
+                <option value="PENDING">Chờ duyệt</option>
+                <option value="APPROVED">Đã duyệt</option>
+                <option value="REJECTED">Từ chối</option>
+                <option value="CANCELLED">Đã hủy</option>
+                <option value="INACTIVE">Không hoạt động</option>
               </select>
             </label>
             <label className="form-field">
-              <span>Type</span>
+              <span>Loại xe</span>
               <select value={filters.type} onChange={(event) => updateFilter('type', event.target.value)}>
-                <option value="">All</option>
-                <option value="MOTORBIKE">MOTORBIKE</option>
-                <option value="CAR">CAR</option>
+                <option value="">Tất cả</option>
+                <option value="MOTORBIKE">Xe máy</option>
+                <option value="CAR">Ô tô</option>
               </select>
             </label>
-            <label className="form-field">
-              <span>License plate</span>
+            <label className="form-field vehicle-filter-bar__hide-on-compact">
+              <span>Biển số</span>
               <input value={filters.licensePlate} onChange={(event) => updateFilter('licensePlate', event.target.value)} placeholder="29A-12345" />
             </label>
             <label className="form-field">
@@ -742,22 +761,22 @@ export function VehicleListPage() {
         {!loading && vehicles.length === 0 ? (
           <div className="empty-state">
             <h3>Chưa có dữ liệu phương tiện</h3>
-            <p>{canManage ? 'Không có vehicle phù hợp với bộ lọc hiện tại.' : 'Bạn chưa có đăng ký gửi xe nào.'}</p>
+            <p>{canManage ? 'Không có phương tiện phù hợp với bộ lọc hiện tại.' : 'Bạn chưa có đăng ký gửi xe nào.'}</p>
           </div>
         ) : null}
 
         {!loading && vehicles.length > 0 ? (
-          <div className="table-card">
-            <table className="data-table">
+          <div className="table-card vehicle-table-card">
+            <table className="data-table vehicle-management-table">
               <thead>
                 <tr>
-                  <th>Apartment</th>
-                  {canManage ? <th>Owner</th> : null}
-                  <th>License Plate</th>
-                  <th>Type</th>
-                  <th>Brand</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Căn hộ</th>
+                  {canManage ? <th>Chủ xe</th> : null}
+                  <th>Biển số</th>
+                  <th>Loại xe</th>
+                  <th>Hãng / mẫu xe</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -766,14 +785,14 @@ export function VehicleListPage() {
                     <td>{renderApartmentCell(getVehicleApartmentId(vehicle))}</td>
                     {canManage ? <td>{renderOwnerCell(getVehicleOwnerId(vehicle))}</td> : null}
                     <td>{vehicle.licensePlate}</td>
-                    <td>{vehicle.type}</td>
+                    <td>{vehicleTypeLabelMap[vehicle.type] || vehicle.type}</td>
                     <td>{vehicle.brand || '-'}</td>
-                    <td><span className={statusClassMap[vehicle.status] || 'badge'}>{vehicle.status}</span></td>
+                    <td><span className={statusClassMap[vehicle.status] || 'badge'}>{statusLabelMap[vehicle.status] || vehicle.status}</span></td>
                     <td>
                       {canManage && vehicle.status === 'PENDING' ? (
                         <div className="table-actions">
-                          <button className="btn btn-success" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'APPROVED')}>Approve</button>
-                          <button className="btn btn-danger" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'REJECTED')}>Reject</button>
+                          <button className="vehicle-icon-btn vehicle-icon-btn--approve" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'APPROVED')} title="Duyệt">✓</button>
+                          <button className="vehicle-icon-btn vehicle-icon-btn--reject" type="button" onClick={() => handleStatusAction(vehicle.vehicleId, 'REJECTED')} title="Từ chối">×</button>
                         </div>
                       ) : null}
                       {isResident && vehicle.status === 'PENDING' ? (
@@ -805,10 +824,10 @@ export function VehicleListPage() {
         <section className="content-card">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Vehicle limits</span>
+              <span className="eyebrow">Giới hạn phương tiện</span>
               <h2>Giới hạn xe theo căn hộ</h2>
             </div>
-            <button className="btn btn-ghost" type="button" onClick={loadLimits}>Làm mới limit</button>
+            <button className="btn btn-ghost" type="button" onClick={loadLimits}>Làm mới giới hạn</button>
           </div>
 
           <form className="form-grid form-grid--two-columns" onSubmit={handleSubmitLimit}>
@@ -825,40 +844,40 @@ export function VehicleListPage() {
               <small>Chọn theo số phòng để không cần nhập UUID.</small>
             </label>
             <label className="form-field">
-              <span>Vehicle type *</span>
+              <span>Loại xe *</span>
               <select value={limitForm.vehicleType} onChange={(event) => updateLimitForm('vehicleType', event.target.value)}>
-                <option value="MOTORBIKE">MOTORBIKE</option>
-                <option value="CAR">CAR</option>
+                <option value="MOTORBIKE">Xe máy</option>
+                <option value="CAR">Ô tô</option>
               </select>
             </label>
             <label className="form-field">
-              <span>Max quantity *</span>
+              <span>Số lượng tối đa *</span>
               <input type="number" min="0" value={limitForm.maxQuantity} onChange={(event) => updateLimitForm('maxQuantity', event.target.value)} required />
             </label>
             <div className="form-actions">
-              <button className="btn btn-primary" type="submit">{limitForm.limitId ? 'Cập nhật limit' : 'Tạo limit'}</button>
-              <button className="btn btn-ghost" type="button" onClick={() => setLimitForm(emptyLimitForm)}>Clear</button>
+              <button className="btn btn-primary" type="submit">{limitForm.limitId ? 'Cập nhật giới hạn' : 'Tạo giới hạn'}</button>
+              <button className="btn btn-ghost" type="button" onClick={() => setLimitForm(emptyLimitForm)}>Xóa form</button>
             </div>
           </form>
 
-          {limitLoading ? <div className="page-status">Đang tải cấu hình limit...</div> : null}
+          {limitLoading ? <div className="page-status">Đang tải cấu hình giới hạn...</div> : null}
           {!limitLoading && limits.length > 0 ? (
             <div className="table-card">
               <table className="data-table">
                 <thead>
-                  <tr><th>Apartment</th><th>Type</th><th>Approved</th><th>Max</th><th>Actions</th></tr>
+                  <tr><th>Căn hộ</th><th>Loại xe</th><th>Đã duyệt</th><th>Tối đa</th><th>Thao tác</th></tr>
                 </thead>
                 <tbody>
                   {limits.map((limit) => (
                     <tr key={limit.limitId}>
                       <td>{renderApartmentCell(limit.apartmentId)}</td>
-                      <td>{limit.vehicleType}</td>
+                      <td>{vehicleTypeLabelMap[limit.vehicleType] || limit.vehicleType}</td>
                       <td>{limit.approvedVehicleCount}</td>
                       <td>{limit.maxQuantity}</td>
                       <td>
                         <div className="table-actions">
-                          <button className="btn btn-ghost" type="button" onClick={() => handleEditLimit(limit)}>Edit</button>
-                          <button className="btn btn-danger" type="button" onClick={() => handleDeleteLimit(limit.limitId)}>Delete</button>
+                          <button className="btn btn-ghost" type="button" onClick={() => handleEditLimit(limit)}>Sửa</button>
+                          <button className="btn btn-danger" type="button" onClick={() => handleDeleteLimit(limit.limitId)}>Xóa</button>
                         </div>
                       </td>
                     </tr>

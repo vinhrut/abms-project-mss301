@@ -2,6 +2,7 @@ package com.abms.apartment.service.impl;
 
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
+import com.abms.apartment.dto.BuildingRequest;
 import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
 import com.abms.apartment.entity.Apartment;
@@ -16,11 +17,16 @@ import com.abms.apartment.repository.BuildingRepository;
 import com.abms.apartment.repository.ContractRepository;
 import com.abms.apartment.service.ApartmentService;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +54,56 @@ public class ApartmentServiceImpl implements ApartmentService {
     public BuildingResponse getBuildingById(UUID buildingId) {
         return mapBuilding(buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId)));
+    }
+
+    @Override
+    @Transactional
+    public BuildingResponse createBuilding(BuildingRequest request) {
+        String code = normalizeCode(request.getCode());
+        if (buildingRepository.existsByCodeIgnoreCase(code)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Building code already exists: " + code);
+        }
+
+        Building building = Building.builder()
+                .buildingId(UUID.randomUUID())
+                .name(request.getName().trim())
+                .code(code)
+                .address(request.getAddress().trim())
+                .floors(normalizeFloors(request.getFloors()))
+                .build();
+        return mapBuilding(buildingRepository.save(building));
+    }
+
+    @Override
+    @Transactional
+    public BuildingResponse updateBuilding(UUID buildingId, BuildingRequest request) {
+        Building building = buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        String code = normalizeCode(request.getCode());
+        if (buildingRepository.existsByCodeIgnoreCaseAndBuildingIdNot(code, buildingId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Building code already exists: " + code);
+        }
+
+        building.setName(request.getName().trim());
+        building.setCode(code);
+        building.setAddress(request.getAddress().trim());
+        building.setFloors(normalizeFloors(request.getFloors()));
+        return mapBuilding(buildingRepository.save(building));
+    }
+
+    @Override
+    @Transactional
+    public void deleteBuilding(UUID buildingId) {
+        Building building = buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        if (apartmentRepository.existsByBuildingId(buildingId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot delete building that still has apartments");
+        }
+
+        buildingRepository.delete(building);
     }
 
     @Override
@@ -200,7 +256,19 @@ public class ApartmentServiceImpl implements ApartmentService {
                 .name(building.getName())
                 .code(building.getCode())
                 .address(building.getAddress())
+                .floors(building.getFloors())
                 .build();
+    }
+
+    private String normalizeCode(String code) {
+        return code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private Integer normalizeFloors(Integer floors) {
+        if (floors == null || floors < 0) {
+            return 0;
+        }
+        return floors;
     }
 
     private ApartmentResidentResponse mapResident(ApartmentResident apartmentResident) {
@@ -424,5 +492,60 @@ public class ApartmentServiceImpl implements ApartmentService {
             return defaultValue;
         }
         return value.trim().toUpperCase();
+    }
+
+    @Override
+    public List<ApartmentResponse> getMyApartments(UUID userId) {
+        List<UUID> apartmentIds = apartmentResidentRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
+                .stream()
+                .map(ApartmentResident::getApartmentId)
+                .distinct()
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, ApartmentResponse> apartmentsById = new LinkedHashMap<>();
+        apartmentRepository.findAllById(apartmentIds)
+                .stream()
+                .map(this::mapApartment)
+                .forEach(apartment -> apartmentsById.put(apartment.getApartmentId(), apartment));
+
+        return apartmentIds.stream()
+                .map(apartmentsById::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByApartmentId(String authorizationHeader, UUID apartmentId) {
+        apartmentRepository.findById(apartmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Apartment not found: " + apartmentId));
+
+        return apartmentResidentRepository.findByApartmentIdOrderByCreatedAtAsc(apartmentId)
+                .stream()
+                .map(this::mapResident)
+                .toList();
+    }
+
+    @Override
+    public List<ApartmentResidentResponse> getResidentsByBuildingId(String authorizationHeader, UUID buildingId) {
+        buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Building not found: " + buildingId));
+
+        List<UUID> apartmentIds = apartmentRepository.findByBuildingIdOrderByRoomNumberAsc(buildingId)
+                .stream()
+                .map(Apartment::getApartmentId)
+                .toList();
+
+        if (apartmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        return apartmentResidentRepository.findByApartmentIdInAndStatusOrderByCreatedAtAsc(apartmentIds, ACTIVE)
+                .stream()
+                .map(this::mapResident)
+                .toList();
     }
 }

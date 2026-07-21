@@ -18,4 +18,5 @@ public class BuildingResponse {
     private String name;
     private String code;
     private String address;
+    private Integer floors;
 }

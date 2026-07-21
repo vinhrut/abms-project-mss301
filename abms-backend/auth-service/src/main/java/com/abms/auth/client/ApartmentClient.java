@@ -62,7 +62,7 @@ public class ApartmentClient {
 
     public ApartmentResponse getApartmentById(UUID apartmentId) {
         return restTemplate.exchange(
-                        apartmentServiceUrl + "/api/v1/apartments/" + apartmentId,
+                        apartmentServiceUrl + "/internal/apartments/" + apartmentId,
                         HttpMethod.GET,
                         null,
                         new ParameterizedTypeReference<ApartmentResponse>() {

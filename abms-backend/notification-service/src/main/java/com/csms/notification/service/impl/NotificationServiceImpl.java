@@ -11,6 +11,7 @@ import com.csms.notification.entity.NotificationType;
 import com.csms.notification.entity.NotificationRecipient;
 import com.csms.notification.repository.NotificationRecipientRepository;
 import com.csms.notification.repository.NotificationRepository;
+import com.csms.notification.repository.NotificationSpecifications;
 import com.csms.notification.service.AuditLogService;
 import com.csms.notification.service.EmailGateway;
 import com.csms.notification.service.NotificationService;
@@ -134,17 +135,18 @@ public class NotificationServiceImpl implements NotificationService {
                 Math.min(Math.max(size, 1), 100),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Notification> result = notificationRepository.searchVisible(
-                userId,
-                normalizeRole(role),
-                manager,
-                buildingId,
-                type,
-                status,
-                from,
-                to,
-                blankToNull(recipient),
-                NotificationStatus.SENT,
+        Page<Notification> result = notificationRepository.findAll(
+                NotificationSpecifications.searchVisible(
+                        userId,
+                        normalizeRole(role),
+                        manager,
+                        buildingId,
+                        type,
+                        status,
+                        from,
+                        to,
+                        toRecipientPattern(recipient),
+                        NotificationStatus.SENT),
                 pageable);
 
         return new PageResponse<>(
@@ -389,6 +391,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /** Build LIKE pattern in Java to avoid PostgreSQL lower(bytea) on concat('%', :param, '%'). */
+    private String toRecipientPattern(String recipient) {
+        String value = blankToNull(recipient);
+        return value == null ? "%" : "%" + value.toLowerCase() + "%";
     }
 
     private String truncate(String value, int maxLength) {

@@ -3,6 +3,8 @@ package com.abms.apartment.service;
 import com.abms.apartment.dto.BuildingResponse;
 import com.abms.apartment.dto.ApartmentResidentResponse;
 import com.abms.apartment.dto.ApartmentResponse;
+import com.abms.apartment.dto.ContractResponse;
+import com.abms.apartment.dto.RenewContractRequest;
 import com.abms.apartment.dto.ResidentRegistrationRequest;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,12 @@ public interface ApartmentService {
     List<BuildingResponse> getAllBuildings();
 
     BuildingResponse getBuildingById(UUID buildingId);
+
+    BuildingResponse createBuilding(BuildingRequest request);
+
+    BuildingResponse updateBuilding(UUID buildingId, BuildingRequest request);
+
+    void deleteBuilding(UUID buildingId);
 
     ApartmentResponse getApartmentById(UUID apartmentId);
 

@@ -20,25 +20,63 @@ public class BuildingAccessService {
 
     public void ensureCanViewApartments(String authorizationHeader, UUID requestedBuildingId) {
         Claims claims = getClaims(authorizationHeader);
-        String role = claims.get("role", String.class);
+        String role = normalizeRole(claims.get("role", String.class));
 
         if ("ADMIN".equals(role)) {
             return;
         }
 
-        UUID managerBuildingId = getBuildingId(claims);
-        if (!"MANAGER".equals(role) || !requestedBuildingId.equals(managerBuildingId)) {
+        UUID scopedBuildingId = getBuildingId(claims);
+        if (!("MANAGER".equals(role) || "STAFF".equals(role)) || !requestedBuildingId.equals(scopedBuildingId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Manager can only view apartments in own building");
+                    "Building scoped users can only view apartments in own building");
         }
+    }
+
+    public void ensureCanViewApartmentDetail(String authorizationHeader, UUID apartmentId, UUID apartmentBuildingId, boolean activeResident) {
+        Claims claims = getClaims(authorizationHeader);
+        String role = normalizeRole(claims.get("role", String.class));
+
+        if ("ADMIN".equals(role)) {
+            return;
+        }
+
+        if (("MANAGER".equals(role) || "STAFF".equals(role)) && apartmentBuildingId.equals(getBuildingId(claims))) {
+            return;
+        }
+
+        if ("RESIDENT".equals(role) && activeResident) {
+            return;
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to view this apartment");
     }
 
     public void ensureCanViewAllApartments(String authorizationHeader) {
         Claims claims = getClaims(authorizationHeader);
-        if (!"ADMIN".equals(claims.get("role", String.class))) {
+        if (!"ADMIN".equals(normalizeRole(claims.get("role", String.class)))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Only admin can view apartments from all buildings");
         }
+    }
+
+    public void ensureAdmin(String authorizationHeader) {
+        Claims claims = getClaims(authorizationHeader);
+        if (!"ADMIN".equals(normalizeRole(claims.get("role", String.class)))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admin can manage buildings globally");
+        }
+    }
+
+    public void ensureCanManageBuilding(String authorizationHeader, UUID buildingId) {
+        Claims claims = getClaims(authorizationHeader);
+        String role = normalizeRole(claims.get("role", String.class));
+        if ("ADMIN".equals(role)) {
+            return;
+        }
+        if ("MANAGER".equals(role) && buildingId != null && buildingId.equals(getBuildingId(claims))) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to manage this building");
     }
 
     private Claims getClaims(String authorizationHeader) {
@@ -68,5 +106,12 @@ public class BuildingAccessService {
         } catch (IllegalArgumentException exception) {
             return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null) {
+            return null;
+        }
+        return role.trim().toUpperCase().replaceFirst("^ROLE_", "");
     }
 }

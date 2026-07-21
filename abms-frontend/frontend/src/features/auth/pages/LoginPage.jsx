@@ -44,7 +44,7 @@ export function LoginPage() {
       await login(formData)
     } catch (error) {
       setApiError(
-        extractApiErrorMessage(error, 'Invalid username or password. Please try again.'),
+        extractApiErrorMessage(error, 'Email hoặc mật khẩu không đúng. Vui lòng thử lại.'),
       )
     } finally {
       setIsSubmitting(false)
@@ -54,7 +54,7 @@ export function LoginPage() {
   return (
     <div className="auth-card">
       <div className="auth-card__header">
-        <span className="eyebrow">Authentication</span>
+        <span className="eyebrow">Đăng nhập</span>
         <h2>Đăng nhập hệ thống</h2>
         <p>Đăng nhập để truy cập đúng workspace theo vai trò. Tài khoản được cấp bởi Admin hoặc Manager, không đăng ký công khai.</p>
       </div>
@@ -73,7 +73,7 @@ export function LoginPage() {
         </label>
 
         <label className="form-field">
-          <span>Password *</span>
+          <span>Mật khẩu *</span>
           <input
             type="password"
             name="password"
@@ -87,7 +87,7 @@ export function LoginPage() {
         {apiError ? <div className="alert alert-error">{apiError}</div> : null}
 
         <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
-          {isSubmitting ? 'Đang đăng nhập...' : 'Login'}
+          {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>
 
         <div className="auth-inline-note">
@@ -96,7 +96,7 @@ export function LoginPage() {
       </form>
 
       <div className="auth-card__footer">
-        <small>Trang được bảo vệ. Sau khi đăng nhập, bạn sẽ được chuyển đến {redirectHint}.</small>
+        <small>Trang được bảo vệ. Sau khi đăng nhập, hệ thống sẽ chuyển bạn đến khu vực phù hợp.</small>
       </div>
     </div>
   )
