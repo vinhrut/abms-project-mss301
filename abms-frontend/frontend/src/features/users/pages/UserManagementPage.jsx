@@ -61,6 +61,7 @@ const initialCreateState = {
 }
 
 const roleOptionsForManager = [ROLE_KEYS.RESIDENT, ROLE_KEYS.STAFF, ROLE_KEYS.TECHNICIAN]
+const usersPageSize = 8
 
 function getStatusClass(status) {
   if (status === 'ACTIVE') return 'badge badge-success'
@@ -82,6 +83,7 @@ export function UserManagementPage() {
   const [message, setMessage] = useState('')
   const [buildingLoadError, setBuildingLoadError] = useState('')
   const [apartmentLoadError, setApartmentLoadError] = useState('')
+  const [currentPage, setCurrentPage] = useState(0)
 
   const isAdmin = normalizedRole === ROLE_KEYS.ADMIN
   const isManager = normalizedRole === ROLE_KEYS.MANAGER
@@ -95,6 +97,11 @@ export function UserManagementPage() {
   }, [auth?.buildingId, auth?.userId, users])
 
   const visibleUsers = useMemo(() => users, [users])
+  const totalUserPages = Math.max(1, Math.ceil(visibleUsers.length / usersPageSize))
+  const paginatedUsers = useMemo(
+    () => visibleUsers.slice(currentPage * usersPageSize, currentPage * usersPageSize + usersPageSize),
+    [currentPage, visibleUsers],
+  )
 
   const buildingById = useMemo(
     () => new Map(buildings.map((building) => [building.buildingId, building]).filter(([buildingId]) => buildingId)),
@@ -192,6 +199,10 @@ export function UserManagementPage() {
       setFormData((prev) => ({ ...prev, apartmentId: '' }))
     }
   }, [formData.apartmentId, formData.roleName, isManager])
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalUserPages - 1))
+  }, [totalUserPages])
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -301,7 +312,7 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="page-stack">
+    <div className="page-stack user-management-page">
       <PageIntro
         eyebrow="Quản lý tài khoản"
         title={isAdmin ? 'Cấp tài khoản manager' : 'Cấp và quản lý tài khoản nội bộ'}
@@ -312,15 +323,15 @@ export function UserManagementPage() {
         }
       />
 
-      <section className="content-card">
-        <div className="section-heading">
+      <section className="content-card user-create-card">
+        <div className="section-heading user-create-card__heading">
           <div>
             <span className="eyebrow">Cấp tài khoản</span>
             <h3>{isAdmin ? 'Tạo quản lý mới' : 'Tạo cư dân / nhân viên / kỹ thuật viên'}</h3>
           </div>
         </div>
 
-        <form className="form-grid form-grid--two-columns" onSubmit={handleSubmit}>
+        <form className="form-grid form-grid--two-columns user-create-form" onSubmit={handleSubmit}>
           {!isAdmin ? (
             <label className="form-field">
               <span>Vai trò *</span>
@@ -423,12 +434,13 @@ export function UserManagementPage() {
         </form>
       </section>
 
-      <section className="content-card">
+      <section className="content-card user-list-card">
         <div className="section-heading">
           <div>
             <span className="eyebrow">Danh bạ tài khoản</span>
             <h3>Danh sách tài khoản có thể quản lý</h3>
           </div>
+          <span className="badge badge-info">{visibleUsers.length} tài khoản</span>
         </div>
 
         {loading ? <div className="page-status">Đang tải danh sách tài khoản...</div> : null}
@@ -449,7 +461,7 @@ export function UserManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr key={user.userId}>
                     <td>{user.fullName}</td>
                     <td>{user.email}</td>
@@ -471,6 +483,30 @@ export function UserManagementPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : null}
+
+        {!loading && visibleUsers.length > usersPageSize ? (
+          <div className="form-actions user-pagination">
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={currentPage <= 0}
+              onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+            >
+              Trang trước
+            </button>
+            <span className="table-note">
+              Trang {currentPage + 1}/{totalUserPages} · Hiển thị {paginatedUsers.length}/{visibleUsers.length} tài khoản
+            </span>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={currentPage + 1 >= totalUserPages}
+              onClick={() => setCurrentPage((page) => Math.min(totalUserPages - 1, page + 1))}
+            >
+              Trang sau
+            </button>
           </div>
         ) : null}
 
