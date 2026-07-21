@@ -1,7 +1,6 @@
 package com.abms.vehicle.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class VehicleRequest {
 
-    @NotNull(message = "Apartment id is required")
     private UUID apartmentId;
 
     private UUID ownerId;

@@ -1,10 +1,13 @@
 import { isValidUuid } from '../../../utils/validation.js'
 
-export function validateVehicleForm(values) {
+export function validateVehicleForm(values, options = {}) {
   const errors = {}
+  const allowApartmentFallback = Boolean(options.allowApartmentFallback)
 
   if (!values.apartmentId?.trim()) {
-    errors.apartmentId = 'Vui lòng chọn căn hộ.'
+    if (!allowApartmentFallback) {
+      errors.apartmentId = 'Vui lòng chọn căn hộ.'
+    }
   } else if (!isValidUuid(values.apartmentId.trim())) {
     errors.apartmentId = 'Căn hộ được chọn không hợp lệ.'
   }
