@@ -70,7 +70,10 @@ export const apartmentService = {
     const { data } = await apiClient.get(`/api/v1/buildings/${buildingId}/residents`)
     return data
   },
-
+ async getActiveResidenceByUserId(userId) {
+  const { data } = await apiClient.get(`/api/v1/apartments/residents/user/${userId}/active`)
+  return data
+ },
   async getApartmentResidentsByApartmentId(apartmentId) {
     if (!apartmentId) {
       return []
