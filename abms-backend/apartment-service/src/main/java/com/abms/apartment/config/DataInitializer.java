@@ -84,7 +84,8 @@ public class DataInitializer implements CommandLineRunner {
                 resident(LINK_A102, APARTMENT_A102, RESIDENT_A102, "TENANT", "TEMPORARY", 8),
                 resident(LINK_B101, APARTMENT_B101, RESIDENT_B101, "OWNER", "PERMANENT", 6));
 
-        cleanupResidents(residents);
+        // Upsert seed links only — do not delete manager-created residents
+        // (those use random residentIds and would be wiped on every restart).
         residents.forEach(this::upsertResident);
     }
 
@@ -104,26 +105,6 @@ public class DataInitializer implements CommandLineRunner {
         apartmentRepository.findAll().stream()
                 .filter(existingApartment -> !allowedApartmentIds.contains(existingApartment.getApartmentId()))
                 .forEach(apartmentRepository::delete);
-    }
-
-    private void cleanupResidents(List<ApartmentResident> seedResidents) {
-        Set<UUID> allowedResidentIds = new HashSet<>();
-        Set<UUID> seedUserIds = new HashSet<>();
-        seedResidents.forEach(seed -> {
-            allowedResidentIds.add(seed.getResidentId());
-            seedUserIds.add(seed.getUserId());
-        });
-
-        apartmentResidentRepository.findAll().stream()
-                .filter(existing -> !allowedResidentIds.contains(existing.getResidentId())
-                        || (seedUserIds.contains(existing.getUserId())
-                                && !allowedResidentIds.contains(existing.getResidentId())))
-                .forEach(apartmentResidentRepository::delete);
-
-        apartmentResidentRepository.findAll().stream()
-                .filter(existing -> seedUserIds.contains(existing.getUserId())
-                        && !allowedResidentIds.contains(existing.getResidentId()))
-                .forEach(apartmentResidentRepository::delete);
     }
 
     private void upsertResident(ApartmentResident seed) {

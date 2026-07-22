@@ -195,11 +195,17 @@ export function InvoiceListPage() {
       } else if (residentApartmentId) {
         response = await invoiceService.getInvoicesByApartmentId(residentApartmentId)
       } else if (auth?.userId) {
-        const residence = await apartmentService.getActiveResidenceByUserId(auth.userId)
-        const nextApartmentId = residence?.apartmentId || ''
+        // Resolve apartment via apartment-service (/my uses gateway X-User-Id).
+        // Prefer this over /residents/user/{id}/active which 404s when no ACTIVE link.
+        const myApartments = await apartmentService.getMyApartments()
+        const nextApartmentId = Array.isArray(myApartments) && myApartments.length > 0
+          ? (myApartments[0].apartmentId || '')
+          : ''
         setResidentApartmentId(nextApartmentId)
         if (nextApartmentId) {
           response = await invoiceService.getInvoicesByApartmentId(nextApartmentId)
+        } else {
+          setListError('Chưa có căn hộ ACTIVE gắn với tài khoản. Liên hệ quản lý để được gán căn hộ.')
         }
       }
 

@@ -193,6 +193,7 @@ public class ApartmentServiceImpl implements ApartmentService {
         ApartmentResident apartmentResident = apartmentResidentRepository
                 .findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Active residence not found for user: " + userId));
+        // Residence link is local; user profile is enriched via Auth Feign client.
         return mapResident(apartmentResident, null);
     }
 
@@ -313,20 +314,21 @@ public class ApartmentServiceImpl implements ApartmentService {
             // ignore contract lookup failures
         }
 
-        if (authorizationHeader != null && !authorizationHeader.isBlank()) {
-            try {
-                UserResponse user = authFeignClient.getUserById(
-                        apartmentResident.getUserId().toString(), authorizationHeader);
-                if (user != null) {
-                    builder.userFullName(user.getFullName())
-                            .userEmail(user.getEmail())
-                            .userPhone(user.getPhone())
-                            .userIdCard(user.getIdCard())
-                            .userRoleName(user.getRoleName());
-                }
-            } catch (RuntimeException ignored) {
-                // ignore auth enrichment failures
+        try {
+            String authHeader = authorizationHeader == null || authorizationHeader.isBlank()
+                    ? ""
+                    : authorizationHeader;
+            UserResponse user = authFeignClient.getUserById(
+                    apartmentResident.getUserId(), authHeader);
+            if (user != null) {
+                builder.userFullName(user.getFullName())
+                        .userEmail(user.getEmail())
+                        .userPhone(user.getPhone())
+                        .userIdCard(user.getIdCard())
+                        .userRoleName(user.getRoleName());
             }
+        } catch (RuntimeException ignored) {
+            // ignore auth enrichment failures
         }
 
         return builder.build();
@@ -473,10 +475,10 @@ public class ApartmentServiceImpl implements ApartmentService {
         try {
             UserResponse user = null;
             try {
-                user = authFeignClient.getUserById(contract.getUserId().toString(), authorizationHeader);
+                user = authFeignClient.getUserById(contract.getUserId(), authorizationHeader);
             } catch (RuntimeException e) {
                 // fallback: try without header
-                try { user = authFeignClient.getUserById(contract.getUserId().toString(), null); } catch (RuntimeException ignored) {}
+                try { user = authFeignClient.getUserById(contract.getUserId(), null); } catch (RuntimeException ignored) {}
             }
             if (user != null) {
                 resp.setUserFullName(user.getFullName());

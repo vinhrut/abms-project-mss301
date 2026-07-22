@@ -44,11 +44,16 @@ export function PaymentListPage() {
       } else if (residentApartmentId) {
         response = await paymentService.getPayments({ apartmentId: residentApartmentId })
       } else if (auth?.userId) {
-        const residence = await apartmentService.getActiveResidenceByUserId(auth.userId)
-        const apartmentId = residence?.apartmentId || ''
+        // Same flow as vehicles/maintenance: apartment-service /my, then finance APIs.
+        const myApartments = await apartmentService.getMyApartments()
+        const apartmentId = Array.isArray(myApartments) && myApartments.length > 0
+          ? (myApartments[0].apartmentId || '')
+          : ''
         setResidentApartmentId(apartmentId)
         if (apartmentId) {
           response = await paymentService.getPayments({ apartmentId })
+        } else {
+          setError('Chưa có căn hộ ACTIVE gắn với tài khoản. Liên hệ quản lý để được gán căn hộ.')
         }
       }
 
